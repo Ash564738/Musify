@@ -1,5 +1,6 @@
 package com.example.musify.data.repositories.podcastsrepository
 
+import android.util.Log
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
@@ -25,30 +26,55 @@ class MusifyPodcastsRepository @Inject constructor(
     override suspend fun fetchPodcastEpisode(
         episodeId: String,
         countryCode: String
-    ): FetchedResource<PodcastEpisode, MusifyErrorType> = tokenRepository.runCatchingWithToken {
-        spotifyService.getEpisodeWithId(
-            token = it, id = episodeId, market = countryCode
-        ).toPodcastEpisode()
+    ): FetchedResource<PodcastEpisode, MusifyErrorType> {
+        Log.d("MusifyPodcastsRepository", "fetchPodcastEpisode called with episodeId=$episodeId, countryCode=$countryCode")
+        return try {
+            tokenRepository.runCatchingWithToken {
+                spotifyService.getEpisodeWithId(
+                    token = it, id = episodeId, market = countryCode
+                ).toPodcastEpisode()
+            }.also {
+                Log.d("MusifyPodcastsRepository", "Successfully fetched podcast episode with episodeId=$episodeId")
+            }
+        } catch (e: Exception) {
+            Log.e("MusifyPodcastsRepository", "Error fetching podcast episode with episodeId=$episodeId: ${e.message}", e)
+            FetchedResource.Failure(cause = MusifyErrorType.NETWORK_ERROR, data = null)
+        }
     }
 
     override suspend fun fetchPodcastShow(
         showId: String,
         countryCode: String
-    ): FetchedResource<PodcastShow, MusifyErrorType> = tokenRepository.runCatchingWithToken {
-        spotifyService.getShowWithId(
-            token = it, id = showId, market = countryCode
-        ).toPodcastShow()
+    ): FetchedResource<PodcastShow, MusifyErrorType> {
+        Log.d("MusifyPodcastsRepository", "fetchPodcastShow called with showId=$showId, countryCode=$countryCode")
+        return try {
+            tokenRepository.runCatchingWithToken {
+                spotifyService.getShowWithId(
+                    token = it, id = showId, market = countryCode
+                ).toPodcastShow()
+            }.also {
+                Log.d("MusifyPodcastsRepository", "Successfully fetched podcast show with showId=$showId")
+            }
+        } catch (e: Exception) {
+            Log.e("MusifyPodcastsRepository", "Error fetching podcast show with showId=$showId: ${e.message}", e)
+            FetchedResource.Failure(cause = MusifyErrorType.NETWORK_ERROR, data = null)
+        }
     }
 
     override fun getPodcastEpisodesStreamForPodcastShow(
         showId: String,
         countryCode: String
-    ): Flow<PagingData<PodcastEpisode>> = Pager(pagingConfig) {
-        PodcastEpisodesForPodcastShowPagingSource(
-            showId = showId,
-            countryCode = countryCode,
-            tokenRepository = tokenRepository,
-            spotifyService = spotifyService
-        )
-    }.flow
+    ): Flow<PagingData<PodcastEpisode>> {
+        Log.d("MusifyPodcastsRepository", "getPodcastEpisodesStreamForPodcastShow called with showId=$showId, countryCode=$countryCode")
+        return Pager(pagingConfig) {
+            PodcastEpisodesForPodcastShowPagingSource(
+                showId = showId,
+                countryCode = countryCode,
+                tokenRepository = tokenRepository,
+                spotifyService = spotifyService
+            )
+        }.flow.also {
+            Log.d("MusifyPodcastsRepository", "Created paginated stream for podcast episodes of showId=$showId")
+        }
+    }
 }

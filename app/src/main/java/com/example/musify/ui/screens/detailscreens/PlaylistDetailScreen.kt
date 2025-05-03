@@ -1,5 +1,6 @@
 package com.example.musify.ui.screens.detailscreens
 
+import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -91,12 +92,15 @@ fun PlaylistDetailScreen(
                 }
             } else {
                 items(tracks) {
-                    it?.let {
+                    it?.let { track ->
                         MusifyCompactTrackCard(
-                            track = it,
-                            onClick = onTrackClicked,
+                            track = track,
+                            onClick = {
+                                Log.d("TrackSearchResult", "Created TrackSearchResult: id=${track.id}, name=${track.name}, streamUrl=${track.trackUrlString}")
+                                onTrackClicked(track)
+                            },
                             isLoadingPlaceholderVisible = false,
-                            isCurrentlyPlaying = it == currentlyPlayingTrack,
+                            isCurrentlyPlaying = track == currentlyPlayingTrack,
                             isAlbumArtVisible = true,
                             subtitleTextStyle = LocalTextStyle.current.copy(
                                 fontWeight = FontWeight.Thin,

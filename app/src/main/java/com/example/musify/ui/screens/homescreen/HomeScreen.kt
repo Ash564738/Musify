@@ -40,13 +40,16 @@ fun HomeScreen(
     isLoading: Boolean,
     isErrorMessageVisible: Boolean,
 ) {
-    val lazyColumState = rememberLazyListState()
+    val lazyColumnState = rememberLazyListState()
     val isStatusbarSpacerVisible = remember {
-        derivedStateOf { lazyColumState.firstVisibleItemIndex > 1 }
+        derivedStateOf { lazyColumnState.firstVisibleItemIndex > 1 }
     }
-    val lazyColumBottomPaddingValues = remember {
+    val lazyColumnBottomPaddingValues = remember {
         MusifyBottomNavigationConstants.navigationHeight + MusifyMiniPlayerConstants.miniPlayerHeight
     }
+
+    val shouldShowError = isErrorMessageVisible && carousels.isEmpty()
+
     val errorMessageItem = @Composable { modifier: Modifier ->
         Column(
             modifier = modifier,
@@ -60,55 +63,56 @@ fun HomeScreen(
             )
         }
     }
+
     Box {
         LazyColumn(
-            state = lazyColumState,
+            state = lazyColumnState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = lazyColumBottomPaddingValues)
+            contentPadding = PaddingValues(bottom = lazyColumnBottomPaddingValues)
         ) {
-            item {
-                HeaderRow(
-                    timeBasedGreeting = timeBasedGreeting,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .statusBarsPadding()
-                        .padding(horizontal = 16.dp, vertical = 32.dp)
-                )
-            }
-            stickyHeader {
-                if (isStatusbarSpacerVisible.value) {
-                    Spacer(
-                        modifier = Modifier
-                            .background(MaterialTheme.colors.background)
-                            .fillMaxWidth()
-                            .windowInsetsTopHeight(WindowInsets.statusBars)
-                    )
-                }
-                Row(
-                    modifier = Modifier
-                        .background(MaterialTheme.colors.background)
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    for (homeFeedFilter in homeFeedFilters) {
-                        MusifyFilterChip(
-                            text = homeFeedFilter.title ?: continue,
-                            onClick = { onHomeFeedFilterClick(homeFeedFilter) },
-                            isSelected = homeFeedFilter == currentlySelectedHomeFeedFilter
-                        )
-                    }
-                }
-            }
-            if (isErrorMessageVisible) {
+            if (shouldShowError) {
                 item {
                     errorMessageItem(
                         Modifier
                             .fillParentMaxSize()
-                            .padding(bottom = lazyColumBottomPaddingValues)
+                            .padding(bottom = lazyColumnBottomPaddingValues)
                     )
                 }
             } else {
+                item {
+                    HeaderRow(
+                        timeBasedGreeting = timeBasedGreeting,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .statusBarsPadding()
+                            .padding(horizontal = 16.dp, vertical = 32.dp)
+                    )
+                }
+                stickyHeader {
+                    if (isStatusbarSpacerVisible.value) {
+                        Spacer(
+                            modifier = Modifier
+                                .background(MaterialTheme.colors.background)
+                                .fillMaxWidth()
+                                .windowInsetsTopHeight(WindowInsets.statusBars)
+                        )
+                    }
+                    Row(
+                        modifier = Modifier
+                            .background(MaterialTheme.colors.background)
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        for (homeFeedFilter in homeFeedFilters) {
+                            MusifyFilterChip(
+                                text = homeFeedFilter.title ?: continue,
+                                onClick = { onHomeFeedFilterClick(homeFeedFilter) },
+                                isSelected = homeFeedFilter == currentlySelectedHomeFeedFilter
+                            )
+                        }
+                    }
+                }
                 items(items = carousels, key = { it.id }) { carousel ->
                     Text(
                         modifier = Modifier.padding(16.dp),
@@ -124,13 +128,13 @@ fun HomeScreen(
                 }
             }
         }
+
         DefaultMusifyLoadingAnimation(
             isVisible = isLoading,
             modifier = Modifier.align(Alignment.Center)
         )
     }
 }
-
 
 @ExperimentalMaterialApi
 @Composable

@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
+import android.util.Log
 
 @HiltViewModel
 class PlaybackViewModel @Inject constructor(
@@ -34,7 +35,6 @@ class PlaybackViewModel @Inject constructor(
     private val _eventChannel = Channel<Event?>()
     val playbackEventsFlow = _eventChannel.receiveAsFlow()
 
-    // 0f to 100f
     val flowOfProgressOfCurrentTrack = mutableStateOf<Flow<Float>>(emptyFlow())
     val flowOfProgressTextOfCurrentTrack = mutableStateOf<Flow<String>>(emptyFlow())
 
@@ -66,48 +66,74 @@ class PlaybackViewModel @Inject constructor(
         }.launchIn(viewModelScope)
     }
 
-    fun resumeIfPausedOrPlay(streamable: Streamable){
-        if(musicPlayer.tryResume()) return
-        playStreamable(streamable)
+    fun resumeIfPausedOrPlay(streamable: Streamable) {
+        try {
+            Log.d("PlaybackViewModel", "resumeIfPausedOrPlay called with streamable: $streamable")
+            if (musicPlayer.tryResume()) {
+                Log.d("PlaybackViewModel", "Resumed playback successfully.")
+                return
+            }
+            playStreamable(streamable)
+        } catch (e: Exception) {
+            Log.e("PlaybackViewModel", "Error in resumeIfPausedOrPlay: ${e.message}", e)
+            viewModelScope.launch {
+                _eventChannel.send(Event.PlaybackError("An unexpected error occurred while resuming playback."))
+            }
+        }
     }
 
     fun playStreamable(streamable: Streamable) {
         viewModelScope.launch {
-            if (streamable.streamInfo.streamUrl == null) {
-                val streamableType = when (streamable) {
-                    is PodcastEpisode -> "podcast episode"
-                    is SearchResult.TrackSearchResult -> "track"
+            try {
+                Log.d("PlaybackViewModel", "playStreamable called with streamable: $streamable")
+                if (streamable.streamInfo.streamUrl == null) {
+                    val streamableType = when (streamable) {
+                        is PodcastEpisode -> "podcast episode"
+                        is SearchResult.TrackSearchResult -> "track"
+                    }
+                    val errorMessage = "This $streamableType is currently unavailable for playback."
+                    Log.e("PlaybackViewModel", errorMessage)
+                    _eventChannel.send(Event.PlaybackError(errorMessage))
+                    return@launch
                 }
-                _eventChannel.send(Event.PlaybackError("This $streamableType is currently unavailable for playback."))
-                return@launch
-            }
 
-            val downloadAlbumArtResult = downloadDrawableFromUrlUseCase.invoke(
-                urlString = streamable.streamInfo.imageUrl,
-                context = getApplication()
-            )
-            if (downloadAlbumArtResult.isSuccess) {
-                // getOrNull() can't be null because this line is executed
-                // if, and only if the image was downloaded successfully.
-                val bitmap = downloadAlbumArtResult.getOrNull()!!.toBitmap()
-                musicPlayer.playStreamable(
-                    streamable = streamable,
-                    associatedAlbumArt = bitmap
+                val downloadAlbumArtResult = downloadDrawableFromUrlUseCase.invoke(
+                    urlString = streamable.streamInfo.imageUrl,
+                    context = getApplication()
                 )
-            } else {
-                _eventChannel.send(Event.PlaybackError(playbackErrorMessage))
-                _playbackState.value = PlaybackState.Error(playbackErrorMessage)
+                if (downloadAlbumArtResult.isSuccess) {
+                    val bitmap = downloadAlbumArtResult.getOrNull()!!.toBitmap()
+                    Log.d("PlaybackViewModel", "Album art downloaded successfully.")
+                    musicPlayer.playStreamable(
+                        streamable = streamable,
+                        associatedAlbumArt = bitmap
+                    )
+                } else {
+                    Log.e("PlaybackViewModel", "Failed to download album art.")
+                    _eventChannel.send(Event.PlaybackError(playbackErrorMessage))
+                    _playbackState.value = PlaybackState.Error(playbackErrorMessage)
+                }
+            } catch (e: Exception) {
+                Log.e("PlaybackViewModel", "Error in playStreamable: ${e.message}", e)
+                _eventChannel.send(Event.PlaybackError("An unexpected error occurred during playback."))
             }
         }
     }
 
     fun pauseCurrentlyPlayingTrack() {
-        musicPlayer.pauseCurrentlyPlayingTrack()
+        try {
+            Log.d("PlaybackViewModel", "pauseCurrentlyPlayingTrack called.")
+            musicPlayer.pauseCurrentlyPlayingTrack()
+            Log.d("PlaybackViewModel", "Playback paused successfully.")
+        } catch (e: Exception) {
+            Log.e("PlaybackViewModel", "Error in pauseCurrentlyPlayingTrack: ${e.message}", e)
+            viewModelScope.launch {
+                _eventChannel.send(Event.PlaybackError("An unexpected error occurred while pausing playback."))
+            }
+        }
     }
 
     private fun convertTimestampMillisToString(millis: Long): String = with(TimeUnit.MILLISECONDS) {
-        // don't display the hour information if the track's duration is
-        // less than an hour
         if (toHours(millis) == 0L) "%02d:%02d".format(
             toMinutes(millis), toSeconds(millis)
         )
@@ -131,18 +157,11 @@ class PlaybackViewModel @Inject constructor(
         data class Playing(val streamable: Streamable) : PlaybackState(streamable)
         data class PlaybackEnded(val streamable: Streamable) : PlaybackState(streamable)
         data class Loading(
-            // Streamable instance that indicates the track that was playing before
-            // the state was changed to loading
             val previousStreamable: Streamable?
         ) : PlaybackState(previouslyPlayingStreamable = previousStreamable)
     }
 
     sealed class Event {
-        // a data class is not used because a 'Channel' will not send
-        // two items of the same type consecutively. Since a data class
-        // overrides equals & hashcode by default, if the same event
-        // occurs consecutively, the event will not be sent over the
-        // channel, resulting in missed events.
         class PlaybackError(val errorMessage: String) : Event()
     }
 }

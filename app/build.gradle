@@ -4,7 +4,9 @@ plugins {
     id 'kotlin-kapt'
     id 'dagger.hilt.android.plugin'
 }
+
 def compose_version = rootProject.ext.compose_version
+
 android {
     namespace "com.example.musify"
     compileSdk 34
@@ -17,14 +19,13 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        vectorDrawables {
-            useSupportLibrary true
-        }
-        // load fields from local.properties file
-        Properties properties = new Properties()
-        properties.load(project.rootProject.file("local.properties").newDataInputStream())
-        buildConfigField "String", "SPOTIFY_CLIENT_ID", "\"${properties.getProperty("SPOTIFY_CLIENT_ID")}\""
-        buildConfigField "String", "SPOTIFY_CLIENT_SECRET", "\"${properties.getProperty("SPOTIFY_CLIENT_SECRET")}\""
+        vectorDrawables.useSupportLibrary = true
+
+        buildConfigField "String", "SPOTIFY_CLIENT_ID", "\"${project.findProperty("SPOTIFY_CLIENT_ID") ?: ""}\""
+        buildConfigField "String", "SPOTIFY_CLIENT_SECRET", "\"${project.findProperty("SPOTIFY_CLIENT_SECRET") ?: ""}\""
+
+        buildConfigField "String", "SOUNDCLOUD_CLIENT_ID", "\"${project.findProperty("SOUNDCLOUD_CLIENT_ID") ?: ""}\""
+        buildConfigField "String", "SOUNDCLOUD_CLIENT_SECRET", "\"${project.findProperty("SOUNDCLOUD_CLIENT_SECRET") ?: ""}\""
     }
 
     buildTypes {
@@ -33,47 +34,45 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
     compileOptions {
-        // To enable the use of java.time api's with minSdk < 26
         coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_19
         targetCompatibility JavaVersion.VERSION_19
     }
+
     kotlinOptions {
         jvmTarget = "19"
     }
+
     buildFeatures {
         compose true
         buildConfig true
     }
+
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.15"
     }
+
     packagingOptions {
-        resources {
-            excludes += '/META-INF/{AL2.0,LGPL2.1}'
-        }
+        resources.excludes += '/META-INF/{AL2.0,LGPL2.1}'
     }
+
     testOptions {
-        unitTests {
-            includeAndroidResources = true
-        }
+        unitTests.includeAndroidResources = true
     }
 }
 
 dependencies {
-    // core
+    // Core
     implementation 'androidx.core:core-ktx:1.12.0'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.7.0'
-
-    // java.time support for api's < Android O
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.5'
 
-    // compose
+    // Compose
     def composeBom = platform('androidx.compose:compose-bom:2024.03.00')
     implementation composeBom
     androidTestImplementation composeBom
-
     implementation "androidx.compose.ui:ui"
     implementation "androidx.compose.material:material"
     implementation "androidx.compose.ui:ui-tooling-preview"
@@ -82,60 +81,63 @@ dependencies {
     implementation 'androidx.activity:activity-compose:1.8.2'
     implementation "androidx.navigation:navigation-compose:2.7.6"
 
-    //accompanist
+    // Accompanist
     implementation "com.google.accompanist:accompanist-placeholder-material:0.32.0"
 
-    // image handling
+    // Image handling
     implementation "io.coil-kt:coil-compose:2.4.0"
-    // lottie compose
     implementation "com.airbnb.android:lottie-compose:6.1.0"
 
-    // testing
+    // Testing
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
-    //noinspection GradleDependency
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
     testImplementation "org.robolectric:robolectric:4.8.1"
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.1"
     testImplementation 'org.mockito:mockito-core:3.9.0'
     testImplementation "org.mockito.kotlin:mockito-kotlin:3.2.0"
 
-    // retrofit
+    // Retrofit & Moshi
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
     implementation 'com.squareup.retrofit2:converter-jackson:2.9.0'
-    // Jackson support for kotlin types
     implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.13.2'
+    implementation "com.squareup.moshi:moshi:1.15.0"
+    implementation "com.squareup.moshi:moshi-kotlin:1.15.0"
+    implementation "com.squareup.retrofit2:converter-moshi:2.9.0"
 
-    // hilt
+    // OkHttp
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.11.0'
+
+    // Hilt
     implementation "com.google.dagger:hilt-android:2.48"
     implementation 'androidx.hilt:hilt-navigation-compose:1.1.0'
     kapt "com.google.dagger:hilt-compiler:2.48"
 
-    //exoplayer
+    // ExoPlayer
     implementation 'com.google.android.exoplayer:exoplayer-core:2.19.1'
-    // for PlayerNotificationManager
     implementation 'com.google.android.exoplayer:exoplayer-ui:2.19.1'
 
-    // paging
+    // Paging
     implementation "androidx.paging:paging-runtime:3.1.1"
     implementation "androidx.paging:paging-compose:1.0.0-alpha15"
 
-    // color extraction
+    // Color extraction
     implementation 'androidx.palette:palette-ktx:1.0.0'
 
-    // mdc components for view
-    // This dependency is not needed once the min lines param
-    // for Text composable becomes available in compose
-    // This parameter is needed in the home screen
+    // Material Components
     implementation 'com.google.android.material:material:1.11.0'
+
+    implementation 'com.google.code.gson:gson:2.10.1'
 }
+
 kapt {
     javacOptions {
         option("-source", "19")
         option("-target", "19")
     }
 }
+
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
     kotlinOptions {
         jvmTarget = "19"

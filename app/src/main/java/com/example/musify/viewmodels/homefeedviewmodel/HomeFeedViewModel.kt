@@ -1,10 +1,12 @@
 package com.example.musify.viewmodels.homefeedviewmodel
 
 import android.app.Application
+import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.musify.data.remote.musicservice.SupportedSpotifyGenres
 import com.example.musify.data.repositories.homefeedrepository.HomeFeedRepository
 import com.example.musify.data.repositories.homefeedrepository.ISO6391LanguageCode
 import com.example.musify.data.utils.FetchedResource
@@ -36,102 +38,141 @@ class HomeFeedViewModel @Inject constructor(
 
     private fun fetchAndAssignHomeFeedCarousels() {
         viewModelScope.launch {
+            Log.d("HomeFeedViewModel", "Fetching home feed carousels...")
             _uiState.value = HomeFeedUiState.LOADING
             val carousels = mutableListOf<HomeFeedCarousel>()
-            val languageCode =
-                getApplication<MusifyApplication>().resources.configuration.locale.language.let(::ISO6391LanguageCode)
+            val languageCode = getApplication<MusifyApplication>().resources.configuration.locale.language.let(::ISO6391LanguageCode)
             val countryCode = getCountryCode()
+            Log.d("HomeFeedViewModel", "Language code: $languageCode, Country code: $countryCode")
+
             val newAlbums = async {
+                Log.d("HomeFeedViewModel", "Fetching newly released albums...")
                 homeFeedRepository.fetchNewlyReleasedAlbums(countryCode)
             }
-            val featuredPlaylists = async {
-                homeFeedRepository.fetchFeaturedPlaylistsForCurrentTimeStamp(
-                    timestampMillis = System.currentTimeMillis(),
-                    countryCode = countryCode,
-                    languageCode = languageCode
+
+            val genreBasedPlaylists = async {
+                Log.d("HomeFeedViewModel", "Fetching playlists based on genre...")
+                homeFeedRepository.fetchPlaylistsByGenre(
+                    genre = SupportedSpotifyGenres.POP,
+                    country = countryCode
                 )
             }
-            val categoricalPlaylists = async {
-                homeFeedRepository.fetchPlaylistsBasedOnCategoriesAvailableForCountry(
-                    countryCode = countryCode, languageCode = languageCode
-                )
-            }
-            featuredPlaylists.awaitFetchedResourceUpdatingUiState {
-                it.playlists.map<SearchResult, HomeFeedCarouselCardInfo>(::toHomeFeedCarouselCardInfo)
-                    .let { homeFeedCarouselCardInfoList ->
-                        carousels.add(
-                            HomeFeedCarousel(
-                                id = "Featured Playlists",
-                                title = "Featured Playlists",
-                                associatedCards = homeFeedCarouselCardInfoList
-                            )
+
+//            val featuredPlaylists = async {
+//                Log.d("HomeFeedViewModel", "Fetching featured playlists...")
+//                homeFeedRepository.fetchFeaturedPlaylistsForCurrentTimeStamp(
+//                    timestampMillis = System.currentTimeMillis(),
+//                    countryCode = countryCode,
+//                    languageCode = languageCode
+//                )
+//            }
+//            val categoricalPlaylists = async {
+//                Log.d("HomeFeedViewModel", "Fetching playlists based on categories...")
+//                homeFeedRepository.fetchPlaylistsBasedOnCategoriesAvailableForCountry(
+//                    countryCode = countryCode, languageCode = languageCode
+//                )
+//            }
+            genreBasedPlaylists.awaitFetchedResourceUpdatingUiState { resource ->
+                resource.map { playlist ->
+                    toHomeFeedCarouselCardInfo(playlist)
+                }.let { homeFeedCarouselCardInfoList ->
+                    carousels.add(
+                        HomeFeedCarousel(
+                            id = "Genre Based Playlists",
+                            title = "Genre Based Playlists",
+                            associatedCards = homeFeedCarouselCardInfoList
                         )
-                    }
+                    )
+                }
             }
-            newAlbums.awaitFetchedResourceUpdatingUiState {
-                it.map<SearchResult, HomeFeedCarouselCardInfo>(::toHomeFeedCarouselCardInfo)
-                    .let { homeFeedCarouselCardInfoList ->
-                        carousels.add(
-                            HomeFeedCarousel(
-                                id = "Newly Released Albums",
-                                title = "Newly Released Albums",
-                                associatedCards = homeFeedCarouselCardInfoList
-                            )
+
+//            featuredPlaylists.awaitFetchedResourceUpdatingUiState { resource ->
+//                resource.playlists.map { playlist ->
+//                    toHomeFeedCarouselCardInfo(playlist)
+//                }.let { homeFeedCarouselCardInfoList ->
+//                    carousels.add(
+//                        HomeFeedCarousel(
+//                            id = "Featured Playlists",
+//                            title = "Featured Playlists",
+//                            associatedCards = homeFeedCarouselCardInfoList
+//                        )
+//                    )
+//                }
+//            }
+            newAlbums.awaitFetchedResourceUpdatingUiState { resource ->
+                resource.map { album ->
+                    toHomeFeedCarouselCardInfo(album)
+                }.let { homeFeedCarouselCardInfoList ->
+                    carousels.add(
+                        HomeFeedCarousel(
+                            id = "Newly Released Albums",
+                            title = "Newly Released Albums",
+                            associatedCards = homeFeedCarouselCardInfoList
                         )
-                    }
+                    )
+                }
             }
-            categoricalPlaylists.awaitFetchedResourceUpdatingUiState {
-                it.map { playlistsForCategory -> playlistsForCategory.toHomeFeedCarousel() }
-                    .forEach(carousels::add)
-            }
+
+//            categoricalPlaylists.awaitFetchedResourceUpdatingUiState { resource ->
+//                resource
+//                    .filter { it.associatedPlaylists.isNotEmpty() }
+//                    .map { it.toHomeFeedCarousel() }
+//                    .forEach(carousels::add)
+//            }
             _homeFeedCarousels.value = carousels
         }
     }
 
     fun refreshFeed() {
         if (_uiState.value == HomeFeedUiState.LOADING) return
-        viewModelScope.launch { fetchAndAssignHomeFeedCarousels() }
+        fetchAndAssignHomeFeedCarousels()
     }
 
-    /**
-     * A utility function that sets the appropriate [_uiState] based on
-     * the result of [Deferred.await]. It uses [awaitFetchedResource]
-     * under the hood. This utility function manages the [_uiState]
-     * on its own without requiring the caller to explicitly pass the
-     * "onError" and "onSuccess" callbacks to the [awaitFetchedResource].
-     * @see [awaitFetchedResource]
-     */
     private suspend fun <FetchedResourceType> Deferred<FetchedResource<FetchedResourceType, MusifyErrorType>>.awaitFetchedResourceUpdatingUiState(
         onSuccess: (FetchedResourceType) -> Unit
     ) {
-        awaitFetchedResource(onError = {
-            if (_uiState.value == HomeFeedUiState.ERROR) return@awaitFetchedResource
+        try {
+            awaitFetchedResource(
+                onError = { errorType ->
+                    Log.e("HomeFeedViewModel", "Error fetching resource: $errorType")
+                    if (_uiState.value != HomeFeedUiState.ERROR) {
+                        _uiState.value = HomeFeedUiState.ERROR
+                    }
+                },
+                onSuccess = { result ->
+                    Log.d("HomeFeedViewModel", "Resource fetched successfully: $result")
+                    onSuccess(result)
+                    if (_uiState.value != HomeFeedUiState.IDLE) {
+                        _uiState.value = HomeFeedUiState.IDLE
+                    }
+                }
+            )
+        } catch (e: Exception) {
+            Log.e("HomeFeedViewModel", "Unexpected error while fetching resource", e)
             _uiState.value = HomeFeedUiState.ERROR
-        }, onSuccess = {
-            onSuccess(it)
-            if (_uiState.value == HomeFeedUiState.IDLE) return@awaitFetchedResource
-            _uiState.value = HomeFeedUiState.IDLE
-        })
+        }
     }
 
-    /**
-     * A method that will await the result of the deferred object and execute the
-     * [onSuccess] lambda if, and only if, the call to [Deferred.await] returned an instance
-     * of [FetchedResource.Success]. The [onSuccess] has a parameter that will provide
-     * the [FetchedResourceType], which represents the type of data that will be
-     * encapsulated within the [FetchedResource.Success] class. In other words,
-     * the [onSuccess]'s parameter will contain [FetchedResource.Success.data].
-     */
     private suspend fun <FetchedResourceType> Deferred<FetchedResource<FetchedResourceType, MusifyErrorType>>.awaitFetchedResource(
         onError: (MusifyErrorType) -> Unit, onSuccess: (FetchedResourceType) -> Unit
     ) {
-        val fetchedResourceResult = this.await()
-        if (fetchedResourceResult !is FetchedResource.Success) {
-            onError((fetchedResourceResult as FetchedResource.Failure).cause)
-            return
+        try {
+            val fetchedResourceResult = this.await()
+            when (fetchedResourceResult) {
+                is FetchedResource.Success -> {
+                    Log.d("HomeFeedViewModel", "Fetched resource successfully: ${fetchedResourceResult.data}")
+                    onSuccess(fetchedResourceResult.data)
+                }
+                is FetchedResource.Failure -> {
+                    val error = fetchedResourceResult.cause
+                    Log.e("HomeFeedViewModel", "Failed to fetch resource: $error, Partial data: ${fetchedResourceResult.data}")
+                    onError(error)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("HomeFeedViewModel", "Unexpected exception while awaiting resource", e)
+            onError(MusifyErrorType.UNKNOWN_ERROR)
         }
-
-        onSuccess(fetchedResourceResult.data)
     }
 
     private fun toHomeFeedCarouselCardInfo(searchResult: SearchResult): HomeFeedCarouselCardInfo =
@@ -155,9 +196,5 @@ class HomeFeedViewModel @Inject constructor(
             else -> throw java.lang.IllegalArgumentException("The method supports only the mapping of AlbumSearchResult and PlaylistSearchResult subclasses")
         }
 
-    /**
-     * An enum class that contains the different UI states associated
-     * with a screen that displays the home feed.
-     */
     enum class HomeFeedUiState { IDLE, LOADING, ERROR }
 }
