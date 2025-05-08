@@ -64,8 +64,7 @@ class AlbumDetailViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = AlbumDetailUiState.Loading
             val result = tracksRepository.fetchTracksForAlbumWithId(
-                albumId = albumId,
-                countryCode = getCountryCode()
+                albumId = albumId
             )
             if (result is FetchedResource.Success) {
                 _tracks.value = result.data

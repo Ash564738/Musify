@@ -74,8 +74,7 @@ class ArtistDetailViewModel @Inject constructor(
     private suspend fun fetchAndAssignPopularTracks() {
         _uiState.value = ArtistDetailScreenUiState.Loading
         val fetchResult = tracksRepository.fetchTopTenTracksForArtistWithId(
-            artistId = artistId,
-            countryCode = getCountryCode()
+            artistId = artistId
         )
         when (fetchResult) {
             is FetchedResource.Failure -> {

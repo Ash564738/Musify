@@ -44,3 +44,12 @@ fun Genre.GenreType.toSupportedSpotifyGenreType() = when (this) {
     Genre.GenreType.POP -> SupportedSpotifyGenres.POP
     Genre.GenreType.SLEEP -> SupportedSpotifyGenres.SLEEP
 }
+
+//fun Genre.GenreType.toSupportedJamendoTags() = when (this) {
+//    Genre.GenreType.ELECTRONIC -> SupportedJamendoTags.ELECTRONIC
+//    Genre.GenreType.ROCK -> SupportedJamendoTags.ROCK
+//    Genre.GenreType.POP -> SupportedJamendoTags.POP
+//    Genre.GenreType.JAZZ -> SupportedJamendoTags.JAZZ
+//    Genre.GenreType.HIPHOP -> SupportedJamendoTags.HIPHOP
+//    else -> throw IllegalArgumentException("Unsupported GenreType for Jamendo: $this")
+//}

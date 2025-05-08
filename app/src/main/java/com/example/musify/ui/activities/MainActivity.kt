@@ -15,12 +15,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.example.musify.ui.navigation.AuthNavigation
 import com.example.musify.ui.navigation.MusifyBottomNavigationConnectedWithBackStack
 import com.example.musify.ui.navigation.MusifyBottomNavigationDestinations
 import com.example.musify.ui.navigation.MusifyNavigation
 import com.example.musify.ui.screens.homescreen.ExpandableMiniPlayerWithSnackbar
 import com.example.musify.ui.theme.MusifyTheme
+import com.example.musify.viewmodels.AuthViewModel
 import com.example.musify.viewmodels.PlaybackViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -43,13 +47,37 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
 @ExperimentalAnimationApi
 @ExperimentalFoundationApi
 @ExperimentalComposeUiApi
 @ExperimentalMaterialApi
 @Composable
 private fun MusifyApp() {
+    val authViewModel = hiltViewModel<AuthViewModel>()
+    val currentUser by authViewModel.currentUser.collectAsState()
+    val navController = rememberNavController() as NavHostController // Explicit cast
+    if (currentUser != null) {
+        MainAppContent(navController = navController)
+        LaunchedEffect(currentUser) {
+            navController.navigate(MusifyBottomNavigationDestinations.Home.route) {
+                popUpTo(0)
+                launchSingleTop = true
+            }
+        }
+    } else {
+        AuthNavigation(
+            onLoginSuccess = {
+                navController.navigate(MusifyBottomNavigationDestinations.Home.route) {
+                    popUpTo(navController.graph.startDestinationId)
+                    launchSingleTop = true
+                }
+            }
+        )
+    }
+}
+@OptIn(ExperimentalAnimationApi::class, ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class, ExperimentalMaterialApi::class)
+@Composable
+private fun MainAppContent(navController: NavHostController) {
     val playbackViewModel = hiltViewModel<PlaybackViewModel>()
     val playbackState by playbackViewModel.playbackState
     val snackbarHostState = remember { SnackbarHostState() }
@@ -81,10 +109,7 @@ private fun MusifyApp() {
             MusifyBottomNavigationDestinations.Premium
         )
     }
-    val navController = rememberNavController()
     Box(modifier = Modifier.fillMaxSize()) {
-        // the playbackState.currentlyPlayingTrack will automatically be set
-        // to null when the playback is stopped
         MusifyNavigation(
             navController = navController,
             playStreamable = playbackViewModel::playStreamable,
@@ -125,4 +150,3 @@ private fun MusifyApp() {
         }
     }
 }
-

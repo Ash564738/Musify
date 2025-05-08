@@ -1,19 +1,25 @@
 package com.example.musify.di
-//import com.example.musify.di.SpotifyRequestInterceptor
+
+import android.content.Context
 import android.util.Log
 import com.example.musify.BuildConfig
+import com.example.musify.data.remote.musicservice.ClientId
+import com.example.musify.data.remote.musicservice.JamendoService
 import com.example.musify.data.remote.musicservice.SpotifyBaseUrls
 import com.example.musify.data.remote.musicservice.SpotifyService
 import com.example.musify.data.remote.token.TokenApi
 import com.example.musify.data.remote.token.tokenmanager.TokenManager
+import com.example.musify.utils.Constants
 import com.example.musify.utils.defaultMusifyJacksonConverterFactory
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
+import retrofit2.converter.moshi.MoshiConverterFactory
 import javax.inject.Singleton
 
 @Module
@@ -76,18 +82,15 @@ object MusicServiceModule {
             throw e
         }
     }
-
     @Provides
     @Singleton
     fun provideOkHttpClient(
         logging: HttpLoggingInterceptor
-        // spotifyRequestInterceptor: SpotifyRequestInterceptor
     ): OkHttpClient {
         Log.d("MusicServiceModule", "Initializing OkHttpClient...")
         return try {
             OkHttpClient.Builder()
                 .addInterceptor(logging)
-                // .addInterceptor(spotifyRequestInterceptor)
                 .build().also {
                     Log.d("MusicServiceModule", "OkHttpClient initialized successfully.")
                 }
@@ -117,11 +120,40 @@ object MusicServiceModule {
         }
     }
 
-//    @Provides
-//    @Singleton
-//    fun provideSpotifyRequestInterceptor(
-//        tokenRepository: TokenRepository
-//    ): SpotifyRequestInterceptor {
-//        return SpotifyRequestInterceptor(tokenRepository, "US", "en_US")
-//    }
+    @Provides
+    @Singleton
+    fun provideJamendoService(): JamendoService {
+        Log.d("MusicServiceModule", "Initializing JamendoService...")
+        return try {
+            Retrofit.Builder()
+                .baseUrl("https://api.jamendo.com/v3.0/")
+                .addConverterFactory(MoshiConverterFactory.create())
+                .build()
+                .create(JamendoService::class.java).also {
+                    Log.d("MusicServiceModule", "JamendoService initialized successfully.")
+                }
+        } catch (e: Exception) {
+            Log.e("MusicServiceModule", "Error initializing JamendoService: ${e.message}", e)
+            throw e
+        }
+    }
+
+    @Provides
+    @ClientId
+    fun provideJamendoClientId(): String {
+        Log.d("MusicServiceModule", "Providing Jamendo Client ID...")
+        return try {
+            Constants.JAMENDO_CLIENT_ID.also {
+                Log.d("MusicServiceModule", "Jamendo Client ID provided successfully.")
+            }
+        } catch (e: Exception) {
+            Log.e("MusicServiceModule", "Error providing Jamendo Client ID: ${e.message}", e)
+            throw e
+        }
+    }
+
+    @Provides
+    fun provideContext(@ApplicationContext context: Context): Context {
+        return context
+    }
 }

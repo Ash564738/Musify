@@ -10,6 +10,9 @@ interface TokenApi {
     @POST("api/token")
     suspend fun fetchAccessToken(
         @Header("Authorization") authorization: String,
-        @Field("grant_type") grantType: String = "client_credentials"
+        @Field("grant_type") grantType: String,
+        @Field("code") code: String? = null,
+        @Field("redirect_uri") redirectUri: String? = null,
+        @Field("refresh_token") refreshToken: String? = null
     ): AccessTokenResponse
 }

@@ -8,15 +8,11 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.musify.data.remote.musicservice.SupportedSpotifyGenres
 import com.example.musify.data.repositories.homefeedrepository.HomeFeedRepository
-import com.example.musify.data.repositories.homefeedrepository.ISO6391LanguageCode
 import com.example.musify.data.utils.FetchedResource
-import com.example.musify.di.MusifyApplication
 import com.example.musify.domain.*
-import com.example.musify.viewmodels.getCountryCode
 import com.example.musify.viewmodels.homefeedviewmodel.greetingphrasegenerator.GreetingPhraseGenerator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -35,91 +31,56 @@ class HomeFeedViewModel @Inject constructor(
     init {
         fetchAndAssignHomeFeedCarousels()
     }
-
     private fun fetchAndAssignHomeFeedCarousels() {
         viewModelScope.launch {
-            Log.d("HomeFeedViewModel", "Fetching home feed carousels...")
             _uiState.value = HomeFeedUiState.LOADING
             val carousels = mutableListOf<HomeFeedCarousel>()
-            val languageCode = getApplication<MusifyApplication>().resources.configuration.locale.language.let(::ISO6391LanguageCode)
-            val countryCode = getCountryCode()
-            Log.d("HomeFeedViewModel", "Language code: $languageCode, Country code: $countryCode")
 
-            val newAlbums = async {
-                Log.d("HomeFeedViewModel", "Fetching newly released albums...")
-                homeFeedRepository.fetchNewlyReleasedAlbums(countryCode)
-            }
-
-            val genreBasedPlaylists = async {
-                Log.d("HomeFeedViewModel", "Fetching playlists based on genre...")
-                homeFeedRepository.fetchPlaylistsByGenre(
+            try {
+                val albumsResult = homeFeedRepository.fetchNewlyReleasedAlbums()
+                val playlistsResult = homeFeedRepository.fetchPlaylistsByGenre(
                     genre = SupportedSpotifyGenres.POP,
-                    country = countryCode
+                    country = "US"
                 )
-            }
-
-//            val featuredPlaylists = async {
-//                Log.d("HomeFeedViewModel", "Fetching featured playlists...")
-//                homeFeedRepository.fetchFeaturedPlaylistsForCurrentTimeStamp(
-//                    timestampMillis = System.currentTimeMillis(),
-//                    countryCode = countryCode,
-//                    languageCode = languageCode
-//                )
-//            }
-//            val categoricalPlaylists = async {
-//                Log.d("HomeFeedViewModel", "Fetching playlists based on categories...")
-//                homeFeedRepository.fetchPlaylistsBasedOnCategoriesAvailableForCountry(
-//                    countryCode = countryCode, languageCode = languageCode
-//                )
-//            }
-            genreBasedPlaylists.awaitFetchedResourceUpdatingUiState { resource ->
-                resource.map { playlist ->
-                    toHomeFeedCarouselCardInfo(playlist)
-                }.let { homeFeedCarouselCardInfoList ->
-                    carousels.add(
-                        HomeFeedCarousel(
-                            id = "Genre Based Playlists",
-                            title = "Genre Based Playlists",
-                            associatedCards = homeFeedCarouselCardInfoList
+                when (albumsResult) {
+                    is FetchedResource.Success -> {
+                        carousels.add(
+                            HomeFeedCarousel(
+                                id = "new_albums",
+                                title = "New Releases",
+                                associatedCards = albumsResult.data.map {
+                                    toHomeFeedCarouselCardInfo(it)
+                                }
+                            )
                         )
-                    )
+                    }
+                    is FetchedResource.Failure -> {
+                        Log.e("HomeFeedViewModel", "Failed to fetch albums: ${albumsResult.cause}")
+                    }
                 }
-            }
-
-//            featuredPlaylists.awaitFetchedResourceUpdatingUiState { resource ->
-//                resource.playlists.map { playlist ->
-//                    toHomeFeedCarouselCardInfo(playlist)
-//                }.let { homeFeedCarouselCardInfoList ->
-//                    carousels.add(
-//                        HomeFeedCarousel(
-//                            id = "Featured Playlists",
-//                            title = "Featured Playlists",
-//                            associatedCards = homeFeedCarouselCardInfoList
-//                        )
-//                    )
-//                }
-//            }
-            newAlbums.awaitFetchedResourceUpdatingUiState { resource ->
-                resource.map { album ->
-                    toHomeFeedCarouselCardInfo(album)
-                }.let { homeFeedCarouselCardInfoList ->
-                    carousels.add(
-                        HomeFeedCarousel(
-                            id = "Newly Released Albums",
-                            title = "Newly Released Albums",
-                            associatedCards = homeFeedCarouselCardInfoList
+                when (playlistsResult) {
+                    is FetchedResource.Success -> {
+                        carousels.add(
+                            HomeFeedCarousel(
+                                id = "featured_playlists",
+                                title = "Featured Playlists",
+                                associatedCards = playlistsResult.data.map {
+                                    toHomeFeedCarouselCardInfo(it)
+                                }
+                            )
                         )
-                    )
+                    }
+                    is FetchedResource.Failure -> {
+                        Log.e("HomeFeedViewModel", "Failed to fetch playlists: ${playlistsResult.cause}")
+                    }
                 }
+                _homeFeedCarousels.value = carousels
+                _uiState.value = if (carousels.isNotEmpty()) HomeFeedUiState.IDLE
+                else HomeFeedUiState.ERROR
+            } catch (e: Exception) {
+                Log.e("HomeFeedViewModel", "Fetch error", e)
+                _uiState.value = HomeFeedUiState.ERROR
             }
-
-//            categoricalPlaylists.awaitFetchedResourceUpdatingUiState { resource ->
-//                resource
-//                    .filter { it.associatedPlaylists.isNotEmpty() }
-//                    .map { it.toHomeFeedCarousel() }
-//                    .forEach(carousels::add)
-//            }
-            _homeFeedCarousels.value = carousels
         }
     }
 

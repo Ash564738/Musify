@@ -25,6 +25,7 @@ import com.example.musify.ui.screens.GetPremiumScreen
 import com.example.musify.ui.screens.homescreen.HomeScreen
 import com.example.musify.ui.screens.searchscreen.PagingItemsForSearchScreen
 import com.example.musify.ui.screens.searchscreen.SearchScreen
+import com.example.musify.viewmodels.AuthViewModel
 import com.example.musify.viewmodels.homefeedviewmodel.HomeFeedViewModel
 import com.example.musify.viewmodels.searchviewmodel.SearchFilter
 import com.example.musify.viewmodels.searchviewmodel.SearchScreenUiState
@@ -86,6 +87,7 @@ private fun NavGraphBuilder.homeScreen(
     onCarouselCardClicked: (HomeFeedCarouselCardInfo) -> Unit
 ) {
     composable(route) {
+        val authViewModel: AuthViewModel = hiltViewModel()
         val homeFeedViewModel = hiltViewModel<HomeFeedViewModel>()
         val filters = remember {
             listOf(
@@ -100,9 +102,10 @@ private fun NavGraphBuilder.homeScreen(
             onHomeFeedFilterClick = {},
             carousels = homeFeedViewModel.homeFeedCarousels.value,
             onHomeFeedCarouselCardClick = onCarouselCardClicked,
-            isErrorMessageVisible = homeFeedViewModel.uiState.value == HomeFeedViewModel.HomeFeedUiState.ERROR,
+            onErrorRetryButtonClick = homeFeedViewModel::refreshFeed,
             isLoading = homeFeedViewModel.uiState.value == HomeFeedViewModel.HomeFeedUiState.LOADING,
-            onErrorRetryButtonClick = homeFeedViewModel::refreshFeed
+            isErrorMessageVisible = homeFeedViewModel.uiState.value == HomeFeedViewModel.HomeFeedUiState.ERROR,
+            onSignOut = { authViewModel.logout() }
         )
     }
 }
@@ -171,14 +174,6 @@ private fun NavGraphBuilder.searchScreen(
                 onSearchFilterChanged = viewModel::updateSearchFilter,
                 isSearchErrorMessageVisible = isLoadingError,
                 onImeDoneButtonClicked = {
-                    // Search only if there was an error while loading.
-                    // A manual call to search() is not required
-                    // when there is no error because, search()
-                    // will be called automatically, everytime the
-                    // search text changes. This prevents duplicate
-                    // calls when the user manually clicks the done
-                    // button after typing the search text, in
-                    // which case, the keyboard will just be hidden.
                     if (isLoadingError) viewModel.search(it)
                     controller?.hide()
                 },

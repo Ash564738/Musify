@@ -17,22 +17,18 @@ import kotlinx.coroutines.flow.Flow
  */
 interface TracksRepository {
     suspend fun fetchTopTenTracksForArtistWithId(
-        artistId: String,
-        countryCode: String
+        artistId: String
     ): FetchedResource<List<SearchResult.TrackSearchResult>, MusifyErrorType>
 
     suspend fun fetchTracksForGenre(
-        genre: Genre,
-        countryCode: String
+        genre: Genre
     ): FetchedResource<List<SearchResult.TrackSearchResult>, MusifyErrorType>
 
     suspend fun fetchTracksForAlbumWithId(
-        albumId: String,
-        countryCode: String
+        albumId: String
     ): FetchedResource<List<SearchResult.TrackSearchResult>, MusifyErrorType>
 
     fun getPaginatedStreamForPlaylistTracks(
-        playlistId: String,
-        countryCode: String,
+        playlistId: String
     ): Flow<PagingData<SearchResult.TrackSearchResult>>
 }

@@ -10,6 +10,10 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        flatDir {
+            dirs 'app/libs'
+        }
+        maven { url "https://maven.spotify.com/artifactory/public" }
     }
 }
 rootProject.name = "Musify"

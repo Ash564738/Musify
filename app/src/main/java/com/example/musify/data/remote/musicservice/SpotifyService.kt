@@ -32,6 +32,41 @@ enum class SupportedSpotifyGenres(private val queryStringValue: String) {
     override fun toString() = queryStringValue
 
 }
+//
+//enum class SupportedJamendoTags(private val queryStringValue: String) {
+//    POP("pop"),
+//    ROCK("rock"),
+//    JAZZ("jazz"),
+//    ELECTRONIC("electro"),
+//    HIPHOP("hiphop");
+//
+//    override fun toString() = queryStringValue
+//}
+//
+//fun SupportedJamendoTags.toGenre(): Genre {
+//    val genreType = getGenreType()
+//    val name = when (genreType) {
+//        GenreType.POP -> "Pop"
+//        GenreType.ROCK -> "Rock"
+//        GenreType.JAZZ -> "Jazz"
+//        GenreType.ELECTRONIC -> "Electronic"
+//        GenreType.HIPHOP -> "Hip-Hop"
+//        else -> "Unknown"
+//    }
+//    return Genre(
+//        id = "$ordinal:${this.name}",
+//        label = name,
+//        genreType = genreType
+//    )
+//}
+//
+//private fun SupportedJamendoTags.getGenreType() = when (this) {
+//    SupportedJamendoTags.POP -> GenreType.POP
+//    SupportedJamendoTags.ROCK -> GenreType.ROCK
+//    SupportedJamendoTags.JAZZ -> GenreType.JAZZ
+//    SupportedJamendoTags.ELECTRONIC -> GenreType.ELECTRONIC
+//    SupportedJamendoTags.HIPHOP -> GenreType.HIPHOP
+//}
 
 /**
  * A mapper function used to map an enum of type [SupportedSpotifyGenres]

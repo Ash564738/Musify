@@ -25,7 +25,6 @@ class PlaylistDetailViewModel @Inject constructor(
     val playbackLoadingStateStream = getPlaybackLoadingStatusUseCase.loadingStatusStream
     val currentlyPlayingTrackStream = getCurrentlyPlayingTrackUseCase.currentlyPlayingTrackStream
     val tracks = tracksRepository.getPaginatedStreamForPlaylistTracks(
-        playlistId = playlistId,
-        countryCode = getCountryCode()
+        playlistId = playlistId
     ).cachedIn(viewModelScope)
 }

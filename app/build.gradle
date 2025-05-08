@@ -3,6 +3,7 @@ plugins {
     id 'org.jetbrains.kotlin.android'
     id 'kotlin-kapt'
     id 'dagger.hilt.android.plugin'
+    id 'com.google.gms.google-services'
 }
 
 def compose_version = rootProject.ext.compose_version
@@ -21,11 +22,14 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
 
-        buildConfigField "String", "SPOTIFY_CLIENT_ID", "\"${project.findProperty("SPOTIFY_CLIENT_ID") ?: ""}\""
-        buildConfigField "String", "SPOTIFY_CLIENT_SECRET", "\"${project.findProperty("SPOTIFY_CLIENT_SECRET") ?: ""}\""
+        buildConfigField "String", "SPOTIFY_CLIENT_ID", "\"${project.findProperty('SPOTIFY_CLIENT_ID') ?: ''}\""
+        buildConfigField "String", "SPOTIFY_CLIENT_SECRET", "\"${project.findProperty('SPOTIFY_CLIENT_SECRET') ?: ''}\""
 
-        buildConfigField "String", "SOUNDCLOUD_CLIENT_ID", "\"${project.findProperty("SOUNDCLOUD_CLIENT_ID") ?: ""}\""
-        buildConfigField "String", "SOUNDCLOUD_CLIENT_SECRET", "\"${project.findProperty("SOUNDCLOUD_CLIENT_SECRET") ?: ""}\""
+        buildConfigField "String", "SOUNDCLOUD_CLIENT_ID", "\"${project.findProperty('SOUNDCLOUD_CLIENT_ID') ?: ''}\""
+        buildConfigField "String", "SOUNDCLOUD_CLIENT_SECRET", "\"${project.findProperty('SOUNDCLOUD_CLIENT_SECRET') ?: ''}\""
+
+        buildConfigField "String", "JAMENDO_CLIENT_ID", "\"${project.findProperty('JAMENDO_CLIENT_ID') ?: ''}\""
+        buildConfigField "String", "JAMENDO_CLIENT_SECRET", "\"${project.findProperty('JAMENDO_CLIENT_SECRET') ?: ''}\""
     }
 
     buildTypes {
@@ -64,25 +68,39 @@ android {
 }
 
 dependencies {
-    // Core
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
+
     implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'com.google.android.material:material:1.11.0'
+
+    // Lifecycle and ViewModel
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.7.0'
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.5'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1'
+    implementation 'androidx.lifecycle:lifecycle-runtime-compose:2.6.2'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2'
 
     // Compose
     def composeBom = platform('androidx.compose:compose-bom:2024.03.00')
     implementation composeBom
     androidTestImplementation composeBom
     implementation "androidx.compose.ui:ui"
-    implementation "androidx.compose.material:material"
+    implementation "androidx.compose.ui:ui-graphics"
     implementation "androidx.compose.ui:ui-tooling-preview"
+    implementation "androidx.compose.material:material"
+    implementation "androidx.compose.material3:material3"
+    implementation "androidx.compose.animation:animation"
+    implementation "androidx.compose.foundation:foundation"
+    implementation "androidx.activity:activity-compose"
+    implementation "androidx.navigation:navigation-compose"
     debugImplementation "androidx.compose.ui:ui-tooling"
     debugImplementation "androidx.compose.ui:ui-test-manifest"
-    implementation 'androidx.activity:activity-compose:1.8.2'
-    implementation "androidx.navigation:navigation-compose:2.7.6"
+    implementation "androidx.compose.material:material-icons-extended"
 
     // Accompanist
     implementation "com.google.accompanist:accompanist-placeholder-material:0.32.0"
+    implementation "com.google.accompanist:accompanist-swiperefresh:0.28.0"
 
     // Image handling
     implementation "io.coil-kt:coil-compose:2.4.0"
@@ -97,44 +115,87 @@ dependencies {
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.1"
     testImplementation 'org.mockito:mockito-core:3.9.0'
     testImplementation "org.mockito.kotlin:mockito-kotlin:3.2.0"
+    testImplementation "androidx.arch.core:core-testing:2.2.0"
+    testImplementation "app.cash.turbine:turbine:0.12.1"
 
-    // Retrofit & Moshi
+    // Networking
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
     implementation 'com.squareup.retrofit2:converter-jackson:2.9.0'
     implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.13.2'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+    implementation "com.squareup.okhttp3:logging-interceptor:4.11.0"
+    implementation "com.squareup.okhttp3:okhttp:4.12.0"
     implementation "com.squareup.moshi:moshi:1.15.0"
     implementation "com.squareup.moshi:moshi-kotlin:1.15.0"
     implementation "com.squareup.retrofit2:converter-moshi:2.9.0"
 
-    // OkHttp
-    implementation 'com.squareup.okhttp3:logging-interceptor:4.11.0'
-
-    // Hilt
+    // Dependency Injection
     implementation "com.google.dagger:hilt-android:2.48"
-    implementation 'androidx.hilt:hilt-navigation-compose:1.1.0'
     kapt "com.google.dagger:hilt-compiler:2.48"
+    implementation "androidx.hilt:hilt-navigation-compose:1.1.0"
+    implementation "androidx.hilt:hilt-common:1.1.0"
+    implementation "androidx.hilt:hilt-work:1.1.0"
 
-    // ExoPlayer
-    implementation 'com.google.android.exoplayer:exoplayer-core:2.19.1'
-    implementation 'com.google.android.exoplayer:exoplayer-ui:2.19.1'
+    // Room
+    implementation "androidx.room:room-runtime:2.5.2"
+    kapt "androidx.room:room-compiler:2.5.2"
+    implementation "androidx.room:room-ktx:2.5.2"
 
     // Paging
     implementation "androidx.paging:paging-runtime:3.1.1"
     implementation "androidx.paging:paging-compose:1.0.0-alpha15"
 
+    // Firebase
+    implementation platform("com.google.firebase:firebase-bom:32.7.3")
+    implementation "com.google.firebase:firebase-auth:22.3.1"
+
+    // Play Services
+    implementation "com.google.android.gms:play-services-auth:21.3.0"
+
+    // AndroidX Credentials
+    implementation "androidx.credentials:credentials:1.1.0"
+    implementation "androidx.credentials:credentials-play-services-auth:1.1.0"
+    implementation "com.google.android.libraries.identity.googleid:googleid:1.1.1"
+
+    // Spotify
+    implementation "com.spotify.android:auth:1.2.5"
+    implementation files("libs/spotify-app-remote-release-0.8.0.aar")
+
+    // ExoPlayer
+    implementation "com.google.android.exoplayer:exoplayer-core:2.19.1"
+    implementation "com.google.android.exoplayer:exoplayer-ui:2.19.1"
+    implementation("androidx.media3:media3-exoplayer:1.2.0")
+    implementation("androidx.media3:media3-ui:1.2.0")
+    implementation("androidx.media3:media3-session:1.2.0")
+
+
     // Color extraction
     implementation 'androidx.palette:palette-ktx:1.0.0'
 
-    // Material Components
-    implementation 'com.google.android.material:material:1.11.0'
+    // Coroutines
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4"
 
+    // Jsoup
+    implementation 'org.jsoup:jsoup:1.15.3'
+
+    // Gson
     implementation 'com.google.code.gson:gson:2.10.1'
+
+    // WorkManager
+    implementation 'androidx.work:work-runtime-ktx:2.9.0'
+
+    kapt "com.squareup.moshi:moshi-kotlin-codegen:1.15.0"
+
 }
 
 kapt {
     javacOptions {
         option("-source", "19")
         option("-target", "19")
+        tasks.withType(JavaCompile) {
+            options.compilerArgs << "-Xlint:deprecation"
+        }
     }
 }
 
