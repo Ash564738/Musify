@@ -15,7 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.musify.ui.navigation.AuthNavigation
@@ -40,13 +39,17 @@ class MainActivity : ComponentActivity() {
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         setContent {
             MusifyTheme {
-                Surface(modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colors.background,
-                    content = { MusifyApp() })
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colors.background
+                ) {
+                    MusifyApp()
+                }
             }
         }
     }
 }
+
 @ExperimentalAnimationApi
 @ExperimentalFoundationApi
 @ExperimentalComposeUiApi
@@ -55,9 +58,10 @@ class MainActivity : ComponentActivity() {
 private fun MusifyApp() {
     val authViewModel = hiltViewModel<AuthViewModel>()
     val currentUser by authViewModel.currentUser.collectAsState()
-    val navController = rememberNavController() as NavHostController // Explicit cast
+    val navController = rememberNavController()
+
     if (currentUser != null) {
-        MainAppContent(navController = navController)
+        MainAppContent(navController)
         LaunchedEffect(currentUser) {
             navController.navigate(MusifyBottomNavigationDestinations.Home.route) {
                 popUpTo(0)
@@ -75,40 +79,45 @@ private fun MusifyApp() {
         )
     }
 }
-@OptIn(ExperimentalAnimationApi::class, ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class, ExperimentalMaterialApi::class)
+
+@OptIn(ExperimentalAnimationApi::class,
+    ExperimentalFoundationApi::class,
+    ExperimentalComposeUiApi::class,
+    ExperimentalMaterialApi::class)
 @Composable
-private fun MainAppContent(navController: NavHostController) {
+private fun MainAppContent(
+    navController: NavHostController
+) {
     val playbackViewModel = hiltViewModel<PlaybackViewModel>()
     val playbackState by playbackViewModel.playbackState
     val snackbarHostState = remember { SnackbarHostState() }
-    val playbackEvent: PlaybackViewModel.Event? by playbackViewModel.playbackEventsFlow.collectAsState(
-        initial = null
-    )
+    val playbackEvent: PlaybackViewModel.Event? by playbackViewModel.playbackEventsFlow.collectAsState(initial = null)
+
     val miniPlayerStreamable = remember(playbackState) {
         playbackState.currentlyPlayingStreamable ?: playbackState.previouslyPlayingStreamable
     }
     var isNowPlayingScreenVisible by remember { mutableStateOf(false) }
-    LaunchedEffect(key1 = playbackEvent) {
-        if (playbackEvent !is PlaybackViewModel.Event.PlaybackError) return@LaunchedEffect
-        snackbarHostState.currentSnackbarData?.dismiss()
-        snackbarHostState.showSnackbar(
-            message = (playbackEvent as PlaybackViewModel.Event.PlaybackError).errorMessage,
-        )
+
+    LaunchedEffect(playbackEvent) {
+        if (playbackEvent is PlaybackViewModel.Event.PlaybackError) {
+            snackbarHostState.currentSnackbarData?.dismiss()
+            snackbarHostState.showSnackbar((playbackEvent as PlaybackViewModel.Event.PlaybackError).errorMessage)
+        }
     }
-    val isPlaybackPaused = remember(playbackState) {
-        playbackState is PlaybackViewModel.PlaybackState.Paused || playbackState is PlaybackViewModel.PlaybackState.PlaybackEnded
-    }
+
+    val isPlaybackPaused = playbackState is PlaybackViewModel.PlaybackState.Paused ||
+            playbackState is PlaybackViewModel.PlaybackState.PlaybackEnded
 
     BackHandler(isNowPlayingScreenVisible) {
         isNowPlayingScreenVisible = false
     }
-    val bottomNavigationItems = remember {
-        listOf(
-            MusifyBottomNavigationDestinations.Home,
-            MusifyBottomNavigationDestinations.Search,
-            MusifyBottomNavigationDestinations.Premium
-        )
-    }
+
+    val bottomNavigationItems = listOf(
+        MusifyBottomNavigationDestinations.Home,
+        MusifyBottomNavigationDestinations.Search,
+        MusifyBottomNavigationDestinations.Premium
+    )
+
     Box(modifier = Modifier.fillMaxSize()) {
         MusifyNavigation(
             navController = navController,
@@ -116,6 +125,7 @@ private fun MainAppContent(navController: NavHostController) {
             isFullScreenNowPlayingOverlayScreenVisible = isNowPlayingScreenVisible,
             onPausePlayback = playbackViewModel::pauseCurrentlyPlayingTrack
         )
+
         Column(modifier = Modifier.align(Alignment.BottomCenter)) {
             AnimatedContent(
                 modifier = Modifier.fillMaxWidth(),
@@ -134,9 +144,9 @@ private fun MainAppContent(navController: NavHostController) {
                         onPauseButtonClicked = playbackViewModel::pauseCurrentlyPlayingTrack,
                         onPlayButtonClicked = playbackViewModel::resumeIfPausedOrPlay,
                         isPlaybackPaused = isPlaybackPaused,
-                        timeElapsedStringFlow = playbackViewModel.flowOfProgressTextOfCurrentTrack.value,
-                        playbackProgressFlow = playbackViewModel.flowOfProgressOfCurrentTrack.value,
-                        totalDurationOfCurrentTrackText = playbackViewModel.totalDurationOfCurrentTrackTimeText.value,
+                        timeElapsedStringFlow = playbackViewModel.progressTextFlow.value,
+                        playbackProgressFlow = playbackViewModel.progressPercentFlow.value,
+                        totalDurationOfCurrentTrackText = playbackViewModel.totalDurationText.value,
                         snackbarHostState = snackbarHostState
                     )
                 }
@@ -145,7 +155,7 @@ private fun MainAppContent(navController: NavHostController) {
             MusifyBottomNavigationConnectedWithBackStack(
                 navController = navController,
                 modifier = Modifier.navigationBarsPadding(),
-                navigationItems = bottomNavigationItems,
+                navigationItems = bottomNavigationItems
             )
         }
     }

@@ -6,7 +6,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.musify.data.remote.musicservice.SupportedSpotifyGenres
+import com.example.musify.data.remote.musicservice.SupportedJamendoTags
 import com.example.musify.data.repositories.homefeedrepository.HomeFeedRepository
 import com.example.musify.data.utils.FetchedResource
 import com.example.musify.domain.*
@@ -38,9 +38,11 @@ class HomeFeedViewModel @Inject constructor(
 
             try {
                 val albumsResult = homeFeedRepository.fetchNewlyReleasedAlbums()
+                val albumsGenreResult = homeFeedRepository.fetchAlbumsByGenre(
+                    genre = SupportedJamendoTags.POP
+                )
                 val playlistsResult = homeFeedRepository.fetchPlaylistsByGenre(
-                    genre = SupportedSpotifyGenres.POP,
-                    country = "US"
+                    genre = SupportedJamendoTags.POP
                 )
                 when (albumsResult) {
                     is FetchedResource.Success -> {
@@ -58,15 +60,27 @@ class HomeFeedViewModel @Inject constructor(
                         Log.e("HomeFeedViewModel", "Failed to fetch albums: ${albumsResult.cause}")
                     }
                 }
+                when (albumsGenreResult) {
+                    is FetchedResource.Success -> {
+                        carousels.add(
+                            HomeFeedCarousel(
+                                id = "Pop_albums",
+                                title = "Pop Albums",
+                                associatedCards = albumsGenreResult.data.map { toHomeFeedCarouselCardInfo(it) }
+                            )
+                        )
+                    }
+                    is FetchedResource.Failure -> {
+                        Log.e("HomeFeedViewModel", "Failed to fetch playlists: ${albumsGenreResult.cause}")
+                    }
+                }
                 when (playlistsResult) {
                     is FetchedResource.Success -> {
                         carousels.add(
                             HomeFeedCarousel(
-                                id = "featured_playlists",
-                                title = "Featured Playlists",
-                                associatedCards = playlistsResult.data.map {
-                                    toHomeFeedCarouselCardInfo(it)
-                                }
+                                id = "Pop_playlists",
+                                title = "Pop Playlists",
+                                associatedCards = playlistsResult.data.map { toHomeFeedCarouselCardInfo(it) }
                             )
                         )
                     }

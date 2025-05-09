@@ -3,6 +3,7 @@ package com.example.musify.data.remote.musicservice
 import com.example.musify.data.remote.response.*
 import com.example.musify.data.remote.token.BearerToken
 import com.example.musify.domain.Genre
+import com.example.musify.domain.Genre.GenreType
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Path
@@ -32,72 +33,23 @@ enum class SupportedSpotifyGenres(private val queryStringValue: String) {
     override fun toString() = queryStringValue
 
 }
-//
-//enum class SupportedJamendoTags(private val queryStringValue: String) {
-//    POP("pop"),
-//    ROCK("rock"),
-//    JAZZ("jazz"),
-//    ELECTRONIC("electro"),
-//    HIPHOP("hiphop");
-//
-//    override fun toString() = queryStringValue
-//}
-//
-//fun SupportedJamendoTags.toGenre(): Genre {
-//    val genreType = getGenreType()
-//    val name = when (genreType) {
-//        GenreType.POP -> "Pop"
-//        GenreType.ROCK -> "Rock"
-//        GenreType.JAZZ -> "Jazz"
-//        GenreType.ELECTRONIC -> "Electronic"
-//        GenreType.HIPHOP -> "Hip-Hop"
-//        else -> "Unknown"
-//    }
-//    return Genre(
-//        id = "$ordinal:${this.name}",
-//        label = name,
-//        genreType = genreType
-//    )
-//}
-//
-//private fun SupportedJamendoTags.getGenreType() = when (this) {
-//    SupportedJamendoTags.POP -> GenreType.POP
-//    SupportedJamendoTags.ROCK -> GenreType.ROCK
-//    SupportedJamendoTags.JAZZ -> GenreType.JAZZ
-//    SupportedJamendoTags.ELECTRONIC -> GenreType.ELECTRONIC
-//    SupportedJamendoTags.HIPHOP -> GenreType.HIPHOP
-//}
 
-/**
- * A mapper function used to map an enum of type [SupportedSpotifyGenres]
- * to an enum of type [Genre].
- */
 fun SupportedSpotifyGenres.toGenre(): Genre {
     val genreType = getGenreType()
     val name = when (genreType) {
-        Genre.GenreType.AMBIENT -> "Ambient"
-        Genre.GenreType.CHILL -> "Chill"
-        Genre.GenreType.CLASSICAL -> "Classical"
-        Genre.GenreType.DANCE -> "Dance"
-        Genre.GenreType.ELECTRONIC -> "Electronic"
-        Genre.GenreType.METAL -> "Metal"
-        Genre.GenreType.RAINY_DAY -> "Rainy day"
-        Genre.GenreType.ROCK -> "Rock"
-        Genre.GenreType.PIANO -> "Piano"
-        Genre.GenreType.POP -> "Pop"
-        Genre.GenreType.SLEEP -> "Sleep"
+        GenreType.POP -> "Pop"
+        GenreType.ROCK -> "Rock"
+        GenreType.JAZZ -> "Jazz"
+        GenreType.ELECTRONIC -> "Electronic"
+        else -> "Unknown"
     }
     return Genre(
-        id = "$ordinal:${this.name} ",
+        id = "$ordinal:${this.name}",
         label = name,
         genreType = genreType
     )
 }
 
-/**
- * A utility function used to get the [Genre.GenreType] associated with
- * an enum of type [SupportedSpotifyGenres].
- */
 private fun SupportedSpotifyGenres.getGenreType() = when (this) {
     SupportedSpotifyGenres.AMBIENT -> Genre.GenreType.AMBIENT
     SupportedSpotifyGenres.CHILL -> Genre.GenreType.CHILL

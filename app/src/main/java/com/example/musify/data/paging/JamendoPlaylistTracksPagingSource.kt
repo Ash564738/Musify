@@ -16,20 +16,26 @@ class JamendoPlaylistTracksPagingSource(
     private var retryCount = 0
 
     override fun getRefreshKey(state: PagingState<Int, SearchResult.TrackSearchResult>): Int? {
-        return state.anchorPosition?.let { anchorPosition ->
-            state.closestPageToPosition(anchorPosition)?.prevKey?.plus(1)
-                ?: state.closestPageToPosition(anchorPosition)?.nextKey?.minus(1)
+        return try {
+            val refreshKey = state.anchorPosition?.let { anchorPosition ->
+                state.closestPageToPosition(anchorPosition)?.prevKey?.plus(1)
+                    ?: state.closestPageToPosition(anchorPosition)?.nextKey?.minus(1)
+            }
+            Log.d(TAG, "Calculated refresh key: $refreshKey")
+            refreshKey
+        } catch (e: Exception) {
+            Log.e(TAG, "Error calculating refresh key: ${e.message}", e)
+            null
         }
     }
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, SearchResult.TrackSearchResult> {
         val position = params.key ?: 0
+        Log.d(TAG, "Starting load with playlistId=$playlistId, position=$position, loadSize=${params.loadSize}")
         return try {
-            Log.d(TAG, "Starting load with playlistId=$playlistId, position=$position, loadSize=${params.loadSize}")
-
             val response = jamendoService.getPlaylistTracks(
                 clientId = clientId,
-                trackIds = playlistId,
+                playlistId = playlistId,
                 offset = position,
                 limit = params.loadSize
             )
@@ -47,8 +53,10 @@ class JamendoPlaylistTracksPagingSource(
                 }
 
                 val results = responseBody.results
-                    .filter { it.audioUrl != null }
-                    .map { it.toTrackSearchResult() }
+                    .flatMap { playlist -> playlist.tracks }
+                    .filter { jamendoTrack -> jamendoTrack.audioUrl != null }
+                    .map { jamendoTrack -> jamendoTrack.toTrackSearchResult() }
+
                 Log.d(TAG, "Successfully loaded ${results.size} tracks for playlistId=$playlistId")
                 LoadResult.Page(
                     data = results,

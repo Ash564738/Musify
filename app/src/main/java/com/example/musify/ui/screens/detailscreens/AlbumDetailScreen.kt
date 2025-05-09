@@ -89,7 +89,7 @@ fun AlbumDetailScreen(
                         onClick = onTrackItemClick,
                         isLoadingPlaceholderVisible = false,
                         isCurrentlyPlaying = it == currentlyPlayingTrack,
-                        isAlbumArtVisible = false,
+                        isAlbumArtVisible = true,
                         subtitleTextStyle = LocalTextStyle.current.copy(
                             fontWeight = FontWeight.Thin,
                             color = MaterialTheme.colors.onBackground.copy(alpha = ContentAlpha.disabled),

@@ -21,10 +21,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * A sealed class hierarchy consisting of all UI states that are related to a screen
- * displaying the details of an artist.
- */
 sealed class ArtistDetailScreenUiState {
     object Idle : ArtistDetailScreenUiState()
     object Loading : ArtistDetailScreenUiState()
@@ -73,7 +69,7 @@ class ArtistDetailViewModel @Inject constructor(
 
     private suspend fun fetchAndAssignPopularTracks() {
         _uiState.value = ArtistDetailScreenUiState.Loading
-        val fetchResult = tracksRepository.fetchTopTenTracksForArtistWithId(
+        val fetchResult = tracksRepository.fetchTracksForArtistWithId(
             artistId = artistId
         )
         when (fetchResult) {

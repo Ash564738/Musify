@@ -1,6 +1,5 @@
 package com.example.musify.data.remote.response
 
-import android.util.Log
 import com.example.musify.data.utils.MapperImageSize
 import com.example.musify.data.utils.getImageResponseForImageSize
 import com.example.musify.domain.SearchResult.TrackSearchResult
@@ -26,14 +25,17 @@ data class TrackResponseWithAlbumMetadata(
 )
 
 fun TrackResponseWithAlbumMetadata.toTrackSearchResult(): TrackSearchResult {
-    if (previewUrl == null) {
-        Log.w("TrackResponseWithAlbumMetadata", "Track with id=$id has no preview URL and is unavailable for playback.")
-    }
     return TrackSearchResult(
         id = id,
         name = name,
         imageUrlString = albumMetadata.images.getImageResponseForImageSize(MapperImageSize.LARGE).url,
         artistsString = albumMetadata.artists.joinToString(",") { it.name },
-        trackUrlString = previewUrl
+        trackUrlString = previewUrl,
+        duration = durationInMillis / 1000,
+        trackPosition = 0,
+        audioDownloadAllowed = false,
+        audioDownloadUrl = "",
+        shareUrl = "",
+        shortUrl = ""
     )
 }

@@ -1,11 +1,15 @@
 package com.example.musify.viewmodels
 
 import android.app.Application
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.musify.R
 import com.example.musify.domain.PodcastEpisode
 import com.example.musify.domain.SearchResult
 import com.example.musify.domain.Streamable
@@ -17,7 +21,8 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
-import android.util.Log
+import androidx.core.graphics.createBitmap
+
 
 @HiltViewModel
 class PlaybackViewModel @Inject constructor(
@@ -26,120 +31,143 @@ class PlaybackViewModel @Inject constructor(
     private val downloadDrawableFromUrlUseCase: DownloadDrawableFromUrlUseCase
 ) : AndroidViewModel(application) {
 
-    private val _totalDurationOfCurrentTrackTimeText = mutableStateOf("00:00")
-    val totalDurationOfCurrentTrackTimeText = _totalDurationOfCurrentTrackTimeText as State<String>
+    private val TAG = "PlaybackViewModel"
+
+    private val defaultPlaceholderBitmap: Bitmap by lazy {
+        BitmapFactory.decodeResource(
+            application.resources,
+            R.drawable.baseline_album_24
+        ) ?: createBitmap(1, 1)
+    }
+
+    private val _totalDurationText = mutableStateOf("00:00")
+    val totalDurationText: State<String> = _totalDurationText
 
     private val _playbackState = mutableStateOf<PlaybackState>(PlaybackState.Idle)
-    val playbackState = _playbackState as State<PlaybackState>
+    val playbackState: State<PlaybackState> = _playbackState
 
     private val _eventChannel = Channel<Event?>()
     val playbackEventsFlow = _eventChannel.receiveAsFlow()
 
-    val flowOfProgressOfCurrentTrack = mutableStateOf<Flow<Float>>(emptyFlow())
-    val flowOfProgressTextOfCurrentTrack = mutableStateOf<Flow<String>>(emptyFlow())
+    val progressPercentFlow = mutableStateOf<Flow<Float>>(emptyFlow())
+    val progressTextFlow = mutableStateOf<Flow<String>>(emptyFlow())
 
-    private val playbackErrorMessage = "An error occurred. Please check internet connection."
+    private val genericErrorMessage = "An error occurred. Please check your internet connection."
 
     init {
-        musicPlayer.currentPlaybackStateStream.onEach {
-            _playbackState.value = when (it) {
-                is MusicPlayerV2.PlaybackState.Loading -> PlaybackState.Loading(it.previouslyPlayingStreamable)
-                is MusicPlayerV2.PlaybackState.Idle -> PlaybackState.Idle
-                is MusicPlayerV2.PlaybackState.Playing -> {
-                    _totalDurationOfCurrentTrackTimeText.value =
-                        convertTimestampMillisToString(it.totalDuration)
-                    flowOfProgressOfCurrentTrack.value =
-                        it.currentPlaybackPositionInMillisFlow.map { progress -> (progress.toFloat() / it.totalDuration) * 100f }
-                    flowOfProgressTextOfCurrentTrack.value =
-                        it.currentPlaybackPositionInMillisFlow.map(::convertTimestampMillisToString)
-                    PlaybackState.Playing(it.currentlyPlayingStreamable)
-                }
-                is MusicPlayerV2.PlaybackState.Paused -> PlaybackState.Paused(it.currentlyPlayingStreamable)
-                is MusicPlayerV2.PlaybackState.Error -> {
-                    viewModelScope.launch {
-                        _eventChannel.send(Event.PlaybackError(playbackErrorMessage))
+        musicPlayer.currentPlaybackStateStream
+            .onEach { state ->
+                _playbackState.value = when (state) {
+                    is MusicPlayerV2.PlaybackState.Loading ->
+                        PlaybackState.Loading(state.previouslyPlayingStreamable)
+                    is MusicPlayerV2.PlaybackState.Idle ->
+                        PlaybackState.Idle
+                    is MusicPlayerV2.PlaybackState.Playing -> {
+                        _totalDurationText.value = convertMillisToTimestamp(state.totalDuration)
+                        progressPercentFlow.value = state.currentPlaybackPositionInMillisFlow
+                            .map { pos -> (pos.toFloat() / state.totalDuration) * 100f }
+                        progressTextFlow.value = state.currentPlaybackPositionInMillisFlow
+                            .map(::convertMillisToTimestamp)
+                        PlaybackState.Playing(state.currentlyPlayingStreamable)
                     }
-                    PlaybackState.Error(playbackErrorMessage)
+                    is MusicPlayerV2.PlaybackState.Paused ->
+                        PlaybackState.Paused(state.currentlyPlayingStreamable)
+                    is MusicPlayerV2.PlaybackState.Error -> {
+                        viewModelScope.launch {
+                            _eventChannel.send(Event.PlaybackError(genericErrorMessage))
+                        }
+                        PlaybackState.Error(genericErrorMessage)
+                    }
+                    is MusicPlayerV2.PlaybackState.Ended ->
+                        PlaybackState.PlaybackEnded(state.streamable)
                 }
-                is MusicPlayerV2.PlaybackState.Ended -> PlaybackState.PlaybackEnded(it.streamable)
             }
-        }.launchIn(viewModelScope)
+            .launchIn(viewModelScope)
     }
 
     fun resumeIfPausedOrPlay(streamable: Streamable) {
         try {
-            Log.d("PlaybackViewModel", "resumeIfPausedOrPlay called with streamable: $streamable")
+            Log.d(TAG, "resumeIfPausedOrPlay: $streamable")
             if (musicPlayer.tryResume()) {
-                Log.d("PlaybackViewModel", "Resumed playback successfully.")
-                return
+                Log.d(TAG, "Resumed playback successfully.")
+            } else {
+                playStreamable(streamable)
             }
-            playStreamable(streamable)
         } catch (e: Exception) {
-            Log.e("PlaybackViewModel", "Error in resumeIfPausedOrPlay: ${e.message}", e)
+            Log.e(TAG, "Error in resumeIfPausedOrPlay", e)
             viewModelScope.launch {
-                _eventChannel.send(Event.PlaybackError("An unexpected error occurred while resuming playback."))
+                _eventChannel.send(Event.PlaybackError("Unexpected error while resuming playback."))
             }
         }
     }
 
     fun playStreamable(streamable: Streamable) {
         viewModelScope.launch {
-            try {
-                Log.d("PlaybackViewModel", "playStreamable called with streamable: $streamable")
-                if (streamable.streamInfo.streamUrl == null) {
-                    val streamableType = when (streamable) {
-                        is PodcastEpisode -> "podcast episode"
-                        is SearchResult.TrackSearchResult -> "track"
-                    }
-                    val errorMessage = "This $streamableType is currently unavailable for playback."
-                    Log.e("PlaybackViewModel", errorMessage)
-                    _eventChannel.send(Event.PlaybackError(errorMessage))
-                    return@launch
-                }
+            Log.d(TAG, "playStreamable: $streamable")
 
-                val downloadAlbumArtResult = downloadDrawableFromUrlUseCase.invoke(
-                    urlString = streamable.streamInfo.imageUrl,
-                    context = getApplication()
-                )
-                if (downloadAlbumArtResult.isSuccess) {
-                    val bitmap = downloadAlbumArtResult.getOrNull()!!.toBitmap()
-                    Log.d("PlaybackViewModel", "Album art downloaded successfully.")
-                    musicPlayer.playStreamable(
-                        streamable = streamable,
-                        associatedAlbumArt = bitmap
-                    )
-                } else {
-                    Log.e("PlaybackViewModel", "Failed to download album art.")
-                    _eventChannel.send(Event.PlaybackError(playbackErrorMessage))
-                    _playbackState.value = PlaybackState.Error(playbackErrorMessage)
+            if (streamable.streamInfo.streamUrl == null) {
+                val type = when (streamable) {
+                    is PodcastEpisode -> "podcast episode"
+                    is SearchResult.TrackSearchResult -> "track"
                 }
-            } catch (e: Exception) {
-                Log.e("PlaybackViewModel", "Error in playStreamable: ${e.message}", e)
-                _eventChannel.send(Event.PlaybackError("An unexpected error occurred during playback."))
+                val msg = "This $type is unavailable for playback."
+                Log.e(TAG, msg)
+                _eventChannel.send(Event.PlaybackError(msg))
+                return@launch
+            }
+
+            val streamableId = when (streamable) {
+                is SearchResult.TrackSearchResult -> streamable.id
+                is PodcastEpisode -> streamable.id
+            }
+
+            val imageUrl = streamable.streamInfo.imageUrl
+            if (imageUrl.isBlank()) {
+                Log.w(TAG, "No album art URL for $streamableId, using placeholder.")
+                musicPlayer.playStreamable(streamable, defaultPlaceholderBitmap)
+                return@launch
+            }
+
+            val downloadResult = downloadDrawableFromUrlUseCase.invoke(
+                urlString = imageUrl,
+                context = getApplication()
+            )
+
+            if (downloadResult.isSuccess) {
+                val bitmap = downloadResult.getOrNull()!!.toBitmap()
+                Log.d(TAG, "Downloaded album art successfully.")
+                musicPlayer.playStreamable(streamable, bitmap)
+            } else {
+                val causeMsg = downloadResult.exceptionOrNull()?.message
+                Log.e(TAG, "Album art download failed: $causeMsg")
+                _eventChannel.send(Event.PlaybackError(genericErrorMessage))
+                musicPlayer.playStreamable(streamable, defaultPlaceholderBitmap)
             }
         }
     }
 
     fun pauseCurrentlyPlayingTrack() {
         try {
-            Log.d("PlaybackViewModel", "pauseCurrentlyPlayingTrack called.")
+            Log.d(TAG, "pauseCurrentlyPlayingTrack")
             musicPlayer.pauseCurrentlyPlayingTrack()
-            Log.d("PlaybackViewModel", "Playback paused successfully.")
         } catch (e: Exception) {
-            Log.e("PlaybackViewModel", "Error in pauseCurrentlyPlayingTrack: ${e.message}", e)
+            Log.e(TAG, "Error in pauseCurrentlyPlayingTrack", e)
             viewModelScope.launch {
-                _eventChannel.send(Event.PlaybackError("An unexpected error occurred while pausing playback."))
+                _eventChannel.send(Event.PlaybackError("Unexpected error while pausing playback."))
             }
         }
     }
 
-    private fun convertTimestampMillisToString(millis: Long): String = with(TimeUnit.MILLISECONDS) {
-        if (toHours(millis) == 0L) "%02d:%02d".format(
-            toMinutes(millis), toSeconds(millis)
-        )
-        else "%02d%02d:%02d".format(
-            toHours(millis), toMinutes(millis), toSeconds(millis)
-        )
+    private fun convertMillisToTimestamp(millis: Long): String = with(TimeUnit.MILLISECONDS) {
+        if (toHours(millis) == 0L) {
+            "%02d:%02d".format(toMinutes(millis), toSeconds(millis) % 60)
+        } else {
+            "%02d:%02d:%02d".format(
+                toHours(millis),
+                toMinutes(millis) % 60,
+                toSeconds(millis) % 60
+            )
+        }
     }
 
     companion object {
@@ -151,17 +179,14 @@ class PlaybackViewModel @Inject constructor(
         val previouslyPlayingStreamable: Streamable? = null
     ) {
         object Idle : PlaybackState()
-        object Stopped : PlaybackState()
-        data class Error(val errorMessage: String) : PlaybackState()
-        data class Paused(val streamable: Streamable) : PlaybackState(streamable)
+        data class Loading(val previous: Streamable?) : PlaybackState(previouslyPlayingStreamable = previous)
         data class Playing(val streamable: Streamable) : PlaybackState(streamable)
+        data class Paused(val streamable: Streamable) : PlaybackState(streamable)
         data class PlaybackEnded(val streamable: Streamable) : PlaybackState(streamable)
-        data class Loading(
-            val previousStreamable: Streamable?
-        ) : PlaybackState(previouslyPlayingStreamable = previousStreamable)
+        data class Error(val errorMessage: String) : PlaybackState()
     }
 
     sealed class Event {
-        class PlaybackError(val errorMessage: String) : Event()
+        data class PlaybackError(val errorMessage: String) : Event()
     }
 }

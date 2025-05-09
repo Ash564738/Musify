@@ -4,12 +4,6 @@ import android.content.Context
 import com.example.musify.utils.generateMusifyDateAndDurationString
 
 sealed class SearchResult {
-    /**
-     * A class that models the result of a search operation for a
-     * specific album.
-     * Note: The [artistsString] property is meant to hold a comma separated
-     * list of artists who worked on the album.
-     */
     data class AlbumSearchResult(
         val id: String,
         val name: String,
@@ -18,20 +12,12 @@ sealed class SearchResult {
         val yearOfReleaseString: String,
     ) : SearchResult()
 
-    /**
-     * A class that models the result of a search operation for a
-     * specific artist.
-     */
     data class ArtistSearchResult(
         val id: String,
         val name: String,
         val imageUrlString: String?
     ) : SearchResult()
 
-    /**
-     * A class that models the result of a search operation for a
-     * specific playlist.
-     */
     data class PlaylistSearchResult(
         val id: String,
         val name: String,
@@ -40,18 +26,18 @@ sealed class SearchResult {
         val imageUrlString: String?
     ) : SearchResult()
 
-    /**
-     * A class that models the result of a search operation for a
-     * specific track.
-     * Note: The [artistsString] property is meant to hold a comma separated
-     * list of artists who worked on the track.
-     */
     data class TrackSearchResult(
         val id: String,
         val name: String,
         val imageUrlString: String,
         val artistsString: String,
-        val trackUrlString: String?
+        val trackUrlString: String?,
+        val duration: Int,
+        val trackPosition: Int,
+        val audioDownloadAllowed: Boolean,
+        val audioDownloadUrl: String,
+        val shareUrl: String,
+        val shortUrl: String
     ) : SearchResult(), Streamable {
         override val streamInfo = StreamInfo(
             streamUrl = trackUrlString,
@@ -85,12 +71,6 @@ sealed class SearchResult {
     }
 }
 
-/**
- * A utility method used to get a string that contains date and duration
- * information in a formatted manner for an instance of
- * [SearchResult.EpisodeSearchResult].
- * @see generateMusifyDateAndDurationString
- */
 fun SearchResult.EpisodeSearchResult.getFormattedDateAndDurationString(context: Context): String =
     generateMusifyDateAndDurationString(
         context = context,

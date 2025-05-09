@@ -1,15 +1,11 @@
 package com.example.musify.data.remote.response
 
+import android.R.attr.duration
 import com.example.musify.data.utils.MapperImageSize
 import com.example.musify.data.utils.getImageResponseForImageSize
 import com.example.musify.domain.SearchResult
 import com.fasterxml.jackson.annotation.JsonProperty
 
-/**
- * A response object that represents an album. It also contains additional
- * meta data about the album and includes information about the
- * artists.
- */
 data class AlbumResponse(
     val id: String,
     val name: String,
@@ -21,18 +17,9 @@ data class AlbumResponse(
     @JsonProperty("total_tracks") val totalTracks: Int,
     val tracks: TracksWithoutAlbumMetadataListResponse
 ) {
-    /**
-     * A data class that contains the list of tracks associated with
-     * a particular [AlbumResponse].
-     */
+
     data class TracksWithoutAlbumMetadataListResponse(@JsonProperty("items") val value: List<TrackResponseWithoutAlbumMetadataResponse>)
 
-    /**
-     * A response object that contains information about a specific track
-     * without containing metadata about the album.
-     * [TrackResponseWithAlbumMetadata] contains both, information about
-     * the track and the metadata about the associated album.
-     */
     data class TrackResponseWithoutAlbumMetadataResponse(
         val id: String,
         val name: String,
@@ -42,11 +29,6 @@ data class AlbumResponse(
         @JsonProperty("duration_ms") val durationInMillis: Int
     )
 
-    /**
-     * A response object that contains information about an Artist.
-     * [ArtistResponse] mandates these two parameters whereas this object
-     * makes [images] and [followers] as nullable type.
-     */
     data class ArtistResponseWithNullableImagesAndFollowers(
         val id: String,
         val name: String,
@@ -55,10 +37,6 @@ data class AlbumResponse(
     )
 }
 
-/**
- * A mapper function used to map an instance of [AlbumResponse] to
- * an instance of [SearchResult.AlbumSearchResult].
- */
 fun AlbumResponse.toAlbumSearchResult() = SearchResult.AlbumSearchResult(
     id = id,
     name = name,
@@ -67,10 +45,7 @@ fun AlbumResponse.toAlbumSearchResult() = SearchResult.AlbumSearchResult(
     albumArtUrlString = images.getImageResponseForImageSize(MapperImageSize.LARGE).url
 )
 
-/**
- * A utility function used to get a list of [SearchResult.TrackSearchResult]s
- * associated with a [AlbumResponse].
- */
+
 fun AlbumResponse.getTracks(): List<SearchResult.TrackSearchResult> =
     tracks.value.map { trackResponse ->
         trackResponse.toTrackSearchResult(
@@ -79,10 +54,6 @@ fun AlbumResponse.getTracks(): List<SearchResult.TrackSearchResult> =
         )
     }
 
-/**
- * A mapper function used to map an instance of [AlbumResponse.TrackResponseWithoutAlbumMetadataResponse]
- * to an instance of [SearchResult.TrackSearchResult].
- */
 fun AlbumResponse.TrackResponseWithoutAlbumMetadataResponse.toTrackSearchResult(
     albumArtImageUrlString: String,
     albumArtistsString: String
@@ -91,5 +62,11 @@ fun AlbumResponse.TrackResponseWithoutAlbumMetadataResponse.toTrackSearchResult(
     name = name,
     imageUrlString = albumArtImageUrlString,
     artistsString = albumArtistsString,
-    trackUrlString = previewUrl
+    trackUrlString = previewUrl,
+    duration = durationInMillis / 1000,
+    trackPosition = 0,
+    audioDownloadAllowed = false,
+    audioDownloadUrl = "",
+    shareUrl = "",
+    shortUrl = ""
 )
