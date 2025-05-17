@@ -31,14 +31,16 @@ fun AuthNavigation(onLoginSuccess: () -> Unit) {
         composable("login") {
             LoginScreen(
                 onLoginSuccess = onLoginSuccess,
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onSignupClick = { navController.navigate("logup") }
             )
         }
 
         composable("logup") {
             LogupScreen(
                 onLogupSuccess = onLoginSuccess,
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onLoginClick = { navController.navigate("login") }
             )
         }
     }
