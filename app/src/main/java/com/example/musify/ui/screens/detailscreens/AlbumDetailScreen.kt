@@ -14,10 +14,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.musify.domain.SearchResult
 import com.example.musify.ui.components.*
 import com.example.musify.ui.dynamicTheme.dynamicbackgroundmodifier.DynamicBackgroundResource
 import com.example.musify.ui.dynamicTheme.dynamicbackgroundmodifier.dynamicBackground
+import com.example.musify.viewmodels.AlbumDetailViewModel
+import com.example.musify.viewmodels.PlaylistDetailViewModel
 import kotlinx.coroutines.launch
 
 @ExperimentalMaterialApi
@@ -34,13 +37,15 @@ fun AlbumDetailScreen(
     isErrorMessageVisible: Boolean,
     currentlyPlayingTrack: SearchResult.TrackSearchResult?
 ) {
+    val viewModel = hiltViewModel<AlbumDetailViewModel>()
+    var showAddToPlaylistDialog by remember { mutableStateOf(false) }
+    var selectedTrackId by remember { mutableStateOf<String?>(null) }
     var isLoadingPlaceholderForAlbumArtVisible by remember { mutableStateOf(false) }
     val lazyListState = rememberLazyListState()
     val isAppBarVisible by remember {
         derivedStateOf { lazyListState.firstVisibleItemIndex > 0 }
     }
-    val dynamicBackgroundResource =
-        remember { DynamicBackgroundResource.FromImageUrl(albumArtUrlString) }
+    val dynamicBackgroundResource = remember { DynamicBackgroundResource.FromImageUrl(albumArtUrlString) }
     val coroutineScope = rememberCoroutineScope()
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -62,7 +67,6 @@ fun AlbumDetailScreen(
                 onImageLoaded = { isLoadingPlaceholderForAlbumArtVisible = false },
                 onBackButtonClicked = onBackButtonClicked
             )
-
             if (isErrorMessageVisible) {
                 item {
                     Column(
@@ -83,18 +87,23 @@ fun AlbumDetailScreen(
                     }
                 }
             } else {
-                items(trackList) {
+                items(trackList) { track ->
                     MusifyCompactTrackCard(
-                        track = it,
+                        track = track,
                         onClick = onTrackItemClick,
                         isLoadingPlaceholderVisible = false,
-                        isCurrentlyPlaying = it == currentlyPlayingTrack,
+                        isCurrentlyPlaying = track == currentlyPlayingTrack,
                         isAlbumArtVisible = true,
                         subtitleTextStyle = LocalTextStyle.current.copy(
                             fontWeight = FontWeight.Thin,
                             color = MaterialTheme.colors.onBackground.copy(alpha = ContentAlpha.disabled),
                         ),
-                        contentPadding = PaddingValues(16.dp)
+                        contentPadding = PaddingValues(16.dp),
+                        onAddToPlaylistClick = {
+                            selectedTrackId = track.id
+                            showAddToPlaylistDialog = true
+                        },
+                        showRemoveButton = false
                     )
                 }
             }
@@ -105,6 +114,27 @@ fun AlbumDetailScreen(
                         .padding(bottom = 16.dp)
                 )
             }
+        }
+
+        if (showAddToPlaylistDialog) {
+            AddToPlaylistDialog(
+                userPlaylistsFlow = viewModel.userPlaylists,
+                selectedTrackId = selectedTrackId ?: "",
+                onDismiss = { showAddToPlaylistDialog = false },
+                onAddToPlaylist = { playlistId, trackId ->
+                    viewModel.addTrackToSelectedPlaylist(playlistId, trackId)
+                },
+                onRemoveFromPlaylist = { playlistId, trackId ->
+                    viewModel.removeTrackFromPlaylist(playlistId, trackId)
+                },
+                onCreateNewPlaylist = { playlistName ->
+                    selectedTrackId?.let { trackId ->
+                        coroutineScope.launch {
+                            viewModel.createNewPlaylistAndAddTrack(playlistName, trackId)
+                        }
+                    }
+                }
+            )
         }
         DefaultMusifyLoadingAnimation(
             modifier = Modifier.align(Alignment.Center),

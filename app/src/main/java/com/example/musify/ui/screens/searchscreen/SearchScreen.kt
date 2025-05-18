@@ -36,10 +36,6 @@ import com.example.musify.ui.components.*
 import com.example.musify.viewmodels.searchviewmodel.SearchFilter
 import kotlinx.coroutines.launch
 
-/**
- * A data class that contains all the different paging items associated
- * with the[SearchScreen].
- */
 data class PagingItemsForSearchScreen(
     val albumListForSearchQuery: LazyPagingItems<SearchResult.AlbumSearchResult>,
     val artistListForSearchQuery: LazyPagingItems<SearchResult.ArtistSearchResult>,
@@ -49,7 +45,6 @@ data class PagingItemsForSearchScreen(
     val episodeListForSearchQuery: LazyPagingItems<SearchResult.EpisodeSearchResult>
 )
 
-// fix lazy list scrolling to top after config change
 @ExperimentalAnimationApi
 @ExperimentalMaterialApi
 @ExperimentalFoundationApi
@@ -79,19 +74,11 @@ fun SearchScreen(
     }
     val isFilterChipGroupVisible by remember { derivedStateOf { isSearchListVisible } }
     val coroutineScope = rememberCoroutineScope()
-    // If there are nested back handlers and both of them are enabled, then the
-    // handler that is at the root of the nested hierarchy will consume the
-    // back handler event. Hence, any back handlers declared at a higher level
-    // will not be executed.
-    // if the full screen player is visible, then don't enable this back handler
-    // this will allow the caller to set a back handler that will close the player
-    // before this back handler is executed.
+
     BackHandler(isSearchListVisible && !isFullScreenNowPlayingOverlayScreenVisible) {
-        // remove focus on the search text field
         focusManager.clearFocus()
         if (searchText.isNotEmpty()) {
             searchText = ""
-            // notify the caller that the text has been emptied out
             onSearchTextChanged(searchText)
         }
         isSearchListVisible = false
@@ -114,7 +101,6 @@ fun SearchScreen(
             currentlySelectedFilter = currentlySelectedFilter,
             onCloseTextFieldButtonClicked = {
                 searchText = ""
-                // notify the caller that the search text is empty
                 onSearchTextChanged("")
             },
             onImeDoneButtonClicked = {
@@ -287,10 +273,6 @@ private fun FilterChipGroup(
         modifier = modifier.horizontalScroll(scrollState),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // There is no content padding param for row.
-        // If the padding is applied directly on the row, then it'll
-        // apply it to the entire row rather than applying it to
-        // whatever is defined in it's content parameter.
         Spacer(modifier = Modifier.width(startPadding))
         filters.forEach {
             MusifyFilterChip(

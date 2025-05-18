@@ -23,4 +23,8 @@ interface TracksRepository {
     fun getPaginatedStreamForPlaylistTracks(
         playlistId: String
     ): Flow<PagingData<SearchResult.TrackSearchResult>>
+
+    fun getPaginatedStreamForTrackIds(
+        songIds: List<String>
+    ): Flow<PagingData<SearchResult.TrackSearchResult>>
 }

@@ -46,7 +46,19 @@ sealed class SearchResult {
             subtitle = artistsString
         )
     }
-
+    fun Song.toTrackSearchResult() = TrackSearchResult(
+        id = this.id,
+        name = this.title,
+        imageUrlString = this.imageUrl,
+        artistsString = this.artist,
+        trackUrlString = this.streamUrl,
+        duration = this.duration.toInt(),
+        trackPosition = 0,
+        audioDownloadAllowed = false,
+        audioDownloadUrl = "",
+        shareUrl = "",
+        shortUrl = ""
+    )
     data class PodcastSearchResult(
         val id: String,
         val name: String,

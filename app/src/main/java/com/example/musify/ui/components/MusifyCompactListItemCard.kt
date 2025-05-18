@@ -1,11 +1,16 @@
 package com.example.musify.ui.components
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,64 +29,14 @@ import com.example.musify.utils.conditional
 import com.google.accompanist.placeholder.PlaceholderHighlight
 import com.google.accompanist.placeholder.material.shimmer
 
-/**
- * An enum containing the all the types of list item cards.
- */
 enum class ListItemCardType { ALBUM, ARTIST, TRACK, PLAYLIST }
 
-/**
- * A composable that represents a compact list item. This composable
- * contains an argument for setting the [trailingButtonIcon]. To
- * automatically set the trailing icon and the shape of the thumbnail
- * based on the [ListItemCardType], use the other overload. The composable
- * will ensure that it has a minimum height of 56.dp and a minimum width
- * of 250.dp. Size values below the minimum values will be ignored.
- * The maximum height of the composable can be of 80.dp. Any values
- * higher than 80.dp will be ignored, and the size would be set to 80.dp.
- * Also, note that the alpha value of the thumbnail image is set to
- * the current value of [LocalContentAlpha].
- *
- * @param thumbnailImageUrlString the url of the image to use as the
- * thumbnail. If this is null, only the text with subtitle will be
- * displayed.
- * @param title the title of the card.
- * @param subtitle the subtitle of the card.
- * @param onClick the callback to execute when the card is clicked.
- * @param trailingButtonIcon an instance of [ImageVector] that will be used
- * as the trailing icon.
- * @param onTrailingButtonIconClick the callback to execute when the
- * [trailingButtonIcon] is clicked.
- * @param modifier the modifier to be applied to the card.
- * @param backgroundColor used to specify the background color of the card.
- * @param shape used to specify the shape of the card.
- * @param thumbnailShape the shape of the thumbnail image. If it is
- * not set, a square shape will be used.
- * @param titleTextStyle the style configuration for the [title] such as
- * color, font, line height etc.
- * @param subtitleTextStyle the style configuration for the [subtitle] such
- * as color, font, line height etc.
- * @param onThumbnailLoading the callback to execute when the thumbnail
- * image is loading.
- * @param onThumbnailImageLoadingFinished the lambda to execute when the image
- * is done loading. A nullable parameter of type [Throwable] is provided
- * to the lambda, that indicates whether the image loading process was
- * successful or not.
- * @param errorPainter A [Painter] that is displayed when the image request is unsuccessful.
- * @param isLoadingPlaceHolderVisible indicates whether the loading
- * placeholder is visible for the thumbnail image.
- * @param contentPadding the [PaddingValues] to be applied to the content
- * of the card.
- * @param placeholderHighlight the [PlaceholderHighlight] to apply to the
- * placeholder that is displayed when the thumbnail image is loading.
- */
 @ExperimentalMaterialApi
 @Composable
 fun MusifyCompactListItemCard(
     title: String,
     subtitle: String,
     onClick: () -> Unit,
-    trailingButtonIcon: ImageVector,
-    onTrailingButtonIconClick: () -> Unit,
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colors.surface,
     shape: Shape = MaterialTheme.shapes.medium,
@@ -94,7 +49,8 @@ fun MusifyCompactListItemCard(
     onThumbnailImageLoadingFinished: ((Throwable?) -> Unit)? = null,
     errorPainter: Painter? = null,
     placeholderHighlight: PlaceholderHighlight = PlaceholderHighlight.shimmer(),
-    contentPadding: PaddingValues = PaddingValues(all = 8.dp)
+    contentPadding: PaddingValues = PaddingValues(all = 8.dp),
+    trailingContent: @Composable (() -> Unit)? = null
 ) {
     Card(
         modifier = Modifier
@@ -150,57 +106,11 @@ fun MusifyCompactListItemCard(
                     style = subtitleTextStyle
                 )
             }
-            IconButton(
-                onClick = onTrailingButtonIconClick
-            ) {
-                Icon(
-                    imageVector = trailingButtonIcon,
-                    contentDescription = null
-                )
-            }
+            trailingContent?.invoke()
         }
     }
 }
 
-
-/**
- * A composable that represents a compact list item. This overload will
- * ensure the use of correct trailing icon and thumbnail shape based
- * on the [cardType]. The composable has predefined size values.
- * Size values below/above the minimum/maximum values will be ignored.
- * See the other overload to know the minimum/maximum size values.
- * If a specific trailing icon is needed, use the other overload.
- * Note that the alpha value of the thumbnail image is set to
- * the current value of [LocalContentAlpha].
- *
- * @param thumbnailImageUrlString the url of the image to use as the
- * thumbnail.
- * @param title the title of the card.
- * @param subtitle the subtitle of the card.
- * @param onClick the callback to execute when the card is clicked.
- * @param onTrailingButtonIconClick the callback to execute when the trailingButtonIcon
- * is clicked.
- * @param modifier the modifier to be applied to the card.
- * @param backgroundColor used to specify the background color of the card.
- * @param shape used to specify the shape of the card.
- * @param titleTextStyle The style configuration for the [title] such as
- * color, font, line height etc.
- * @param subtitleTextStyle The style configuration for the [subtitle] such
- * as color, font, line height etc.
- * @param onThumbnailLoading the callback to execute when the thumbnail
- * image is loading.
- * @param onThumbnailImageLoadingFinished the lambda to execute when the image
- * is done loading. A nullable parameter of type [Throwable] is provided
- * to the lambda, that indicates whether the image loading process was
- * successful or not.
- * @param errorPainter A [Painter] that is displayed when the image request is unsuccessful.
- * @param isLoadingPlaceHolderVisible indicates whether the loading
- * placeholder is visible for the thumbnail image.
- * @param contentPadding the [PaddingValues] to be applied to the content
- * of the card.
- * @param placeholderHighlight the [PlaceholderHighlight] to apply to the
- * placeholder that is displayed when the thumbnail image is loading.
- */
 @ExperimentalMaterialApi
 @Composable
 fun MusifyCompactListItemCard(
@@ -209,7 +119,7 @@ fun MusifyCompactListItemCard(
     subtitle: String,
     thumbnailImageUrlString: String?,
     onClick: () -> Unit,
-    onTrailingButtonIconClick: () -> Unit,
+    onAddToPlaylistClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colors.surface,
     shape: Shape = MaterialTheme.shapes.medium,
@@ -220,8 +130,57 @@ fun MusifyCompactListItemCard(
     onThumbnailImageLoadingFinished: ((Throwable?) -> Unit)? = null,
     errorPainter: Painter? = null,
     placeholderHighlight: PlaceholderHighlight = PlaceholderHighlight.shimmer(),
-    contentPadding: PaddingValues = PaddingValues(8.dp)
+    contentPadding: PaddingValues = PaddingValues(8.dp),
+    showRemoveButton: Boolean = false,
+    onRemoveClick: () -> Unit = {}
 ) {
+    var showMenu by remember { mutableStateOf(false) }
+    val trailingContent: @Composable () -> Unit = {
+        if (cardType == ListItemCardType.TRACK) {
+            Box(modifier = Modifier.wrapContentSize(Alignment.TopEnd)) {
+                IconButton(onClick = { showMenu = true }) {
+                    Icon(Icons.Filled.MoreVert, "Track options")
+                }
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false }
+                ) {
+                    if (showRemoveButton) {
+                        DropdownMenuItem(
+                            onClick = {
+                                onRemoveClick()
+                                showMenu = false
+                            }
+                        ) {
+                            Text("Remove from Playlist")
+                        }
+                    } else {
+                        onAddToPlaylistClick?.let {
+                            DropdownMenuItem(
+                                onClick = {
+                                    onAddToPlaylistClick.invoke()
+                                    showMenu = false
+                                }
+                            ) {
+                                Text("Add to Playlist")
+                            }
+                        }
+                    }
+                    DropdownMenuItem(onClick = {}) {
+                        Text("Share")
+                    }
+                }
+            }
+        } else {
+            IconButton(onClick = {}) {
+                Icon(
+                    imageVector = ImageVector.vectorResource(id = R.drawable.ic_baseline_chevron_right_24),
+                    contentDescription = null
+                )
+            }
+        }
+    }
+
     MusifyCompactListItemCard(
         modifier = modifier,
         backgroundColor = backgroundColor,
@@ -230,11 +189,7 @@ fun MusifyCompactListItemCard(
         title = title,
         subtitle = subtitle,
         onClick = onClick,
-        trailingButtonIcon = when (cardType) {
-            ListItemCardType.TRACK -> Icons.Filled.MoreVert
-            else -> ImageVector.vectorResource(id = R.drawable.ic_baseline_chevron_right_24)
-        },
-        onTrailingButtonIconClick = onTrailingButtonIconClick,
+        trailingContent = trailingContent,
         thumbnailShape = if (cardType == ListItemCardType.ARTIST) CircleShape else null,
         titleTextStyle = titleTextStyle,
         subtitleTextStyle = subtitleTextStyle,

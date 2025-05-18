@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import androidx.core.graphics.createBitmap
+import com.example.musify.domain.Song
 
 
 @HiltViewModel
@@ -109,6 +110,7 @@ class PlaybackViewModel @Inject constructor(
                 val type = when (streamable) {
                     is PodcastEpisode -> "podcast episode"
                     is SearchResult.TrackSearchResult -> "track"
+                    is Song -> "song"
                 }
                 val msg = "This $type is unavailable for playback."
                 Log.e(TAG, msg)
@@ -119,6 +121,7 @@ class PlaybackViewModel @Inject constructor(
             val streamableId = when (streamable) {
                 is SearchResult.TrackSearchResult -> streamable.id
                 is PodcastEpisode -> streamable.id
+                is Song -> streamable.id
             }
 
             val imageUrl = streamable.streamInfo.imageUrl

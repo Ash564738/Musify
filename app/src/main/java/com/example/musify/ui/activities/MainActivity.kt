@@ -115,7 +115,9 @@ private fun MainAppContent(
     val bottomNavigationItems = listOf(
         MusifyBottomNavigationDestinations.Home,
         MusifyBottomNavigationDestinations.Search,
-        MusifyBottomNavigationDestinations.Premium
+        MusifyBottomNavigationDestinations.Premium,
+        MusifyBottomNavigationDestinations.Favorite,
+        MusifyBottomNavigationDestinations.Playlist
     )
 
     Box(modifier = Modifier.fillMaxSize()) {

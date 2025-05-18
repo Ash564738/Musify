@@ -2,6 +2,7 @@ package com.example.musify.ui.screens.homescreen
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,35 +14,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.musify.domain.Streamable
 import com.example.musify.ui.components.MusifyMiniPlayer
 import com.example.musify.ui.screens.NowPlayingScreen
 import com.example.musify.viewmodels.PlaybackViewModel
 import kotlinx.coroutines.flow.Flow
 
-/**
- * A mini player that can expand to fill the entire screen when clicked.
- * This composable also contains a snack bar. The snack bar will be
- * displayed on top of the mini player if it is collapsed. If the
- * mine player is expanded, then the snack bar will be displayed
- * at the bottom of the screen.
- *
- * @param streamable the [Streamable] to be displayed.
- * @param onPauseButtonClicked the lambda to execute when the pause button
- * is clicked.
- * @param onPlayButtonClicked the lambda to execute when the play button
- * is clicked.
- * @param isPlaybackPaused indicates whether the playback is paused. Based on
- * this, the play/pause button will be shown.
- * @param timeElapsedStringFlow a [Flow] that emits a stream of strings
- * that represent the time elapsed.
- * @param playbackProgressFlow a [Flow] that emits the current playback progress.
- * @param totalDurationOfCurrentTrackText represents the total duration of the
- * currently playing track as a string.
- * @param modifier the modifier to be applied to the composable.
- * @param snackbarHostState the [SnackbarHostState] that will be used for
- * handing the snackbar used in this composable.
- */
 @ExperimentalAnimationApi
 @Composable
 fun ExpandableMiniPlayerWithSnackbar(
@@ -60,7 +39,7 @@ fun ExpandableMiniPlayerWithSnackbar(
         modifier = modifier,
         targetState = isNowPlayingScreenVisible,
         transitionSpec = {
-            slideInVertically(animationSpec = tween()) with shrinkOut(animationSpec = tween())
+            slideInVertically(animationSpec = tween()).togetherWith(shrinkOut(animationSpec = tween()))
         }
     ) { isFullScreenVisible ->
         if (isFullScreenVisible) {
@@ -78,7 +57,8 @@ fun ExpandableMiniPlayerWithSnackbar(
                     onPlayButtonClicked = { onPlayButtonClicked(streamable) },
                     onPauseButtonClicked = onPauseButtonClicked,
                     onSkipNextButtonClicked = {},
-                    onRepeatButtonClicked = {}
+                    onRepeatButtonClicked = {},
+                    viewModel = viewModel()
                 )
                 SnackbarHost(
                     modifier = Modifier

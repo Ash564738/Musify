@@ -9,11 +9,11 @@ import com.fasterxml.jackson.annotation.JsonProperty
 data class AlbumResponse(
     val id: String,
     val name: String,
-    @JsonProperty("album_type") val albumType: String, // album,single or compilation
+    @JsonProperty("album_type") val albumType: String,
     val artists: List<ArtistResponseWithNullableImagesAndFollowers>,
     val images: List<ImageResponse>,
     @JsonProperty("release_date") val releaseDate: String,
-    @JsonProperty("release_date_precision") val releaseDatePrecision: String, // year, month or day
+    @JsonProperty("release_date_precision") val releaseDatePrecision: String,
     @JsonProperty("total_tracks") val totalTracks: Int,
     val tracks: TracksWithoutAlbumMetadataListResponse
 ) {

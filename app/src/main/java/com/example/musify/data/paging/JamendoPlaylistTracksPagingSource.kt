@@ -13,6 +13,7 @@ class JamendoPlaylistTracksPagingSource(
     private val jamendoService: JamendoService,
     private val clientId: String
 ) : PagingSource<Int, SearchResult.TrackSearchResult>() {
+
     private var retryCount = 0
 
     override fun getRefreshKey(state: PagingState<Int, SearchResult.TrackSearchResult>): Int? {
@@ -41,9 +42,6 @@ class JamendoPlaylistTracksPagingSource(
             )
 
             Log.d(TAG, "Response received: isSuccessful=${response.isSuccessful}, code=${response.code()}")
-            Log.d(TAG, "Response headers: ${response.headers()}")
-            Log.d(TAG, "Response body: ${response.body()?.toString() ?: "null"}")
-
             if (response.isSuccessful) {
                 val responseBody = response.body()
                 if (responseBody?.headers?.code != 0) {

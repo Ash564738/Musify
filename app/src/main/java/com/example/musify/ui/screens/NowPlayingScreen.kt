@@ -1,8 +1,10 @@
 package com.example.musify.ui.screens
 
+import com.example.musify.viewmodels.FavoriteSongsViewModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,11 +20,17 @@ import com.example.musify.ui.components.AsyncImageWithPlaceholder
 import com.example.musify.ui.dynamicTheme.dynamicbackgroundmodifier.DynamicBackgroundResource
 import com.example.musify.ui.dynamicTheme.dynamicbackgroundmodifier.dynamicBackground
 import kotlinx.coroutines.flow.Flow
+import androidx.compose.animation.core.*
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.unit.IntOffset
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.musify.domain.Song
+import com.example.musify.domain.StreamInfo
+import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
-// collecting the flow within the composable scopes the collector to the composable.
-// This ensures that the collection of flow is stopped as soon this composable
-// is removed from composition. Therefore, this composables use parameters of type
-// Flow.
 @Composable
 fun NowPlayingScreen(
     streamable: Streamable,
@@ -37,17 +45,13 @@ fun NowPlayingScreen(
     onPlayButtonClicked: () -> Unit,
     onPauseButtonClicked: () -> Unit,
     onSkipNextButtonClicked: () -> Unit,
-    onRepeatButtonClicked: () -> Unit
+    onRepeatButtonClicked: () -> Unit,
+    viewModel: FavoriteSongsViewModel = viewModel()
 ) {
     var isImageLoadingPlaceholderVisible by remember { mutableStateOf(true) }
     val dynamicBackgroundResource = remember {
         DynamicBackgroundResource.FromImageUrl(streamable.streamInfo.imageUrl)
     }
-    // All built-in compose layouts don't use a surface to display the content.
-    // This means, if there is a list of clickable tracks displayed behind
-    // the layout, then it will be possible to click them even if they are
-    // not visible. To prevent such a behavior, surround the NowPlayingScreen
-    // content with a surface.
     Surface {
         Column(
             modifier = Modifier
@@ -73,13 +77,23 @@ fun NowPlayingScreen(
                 onImageLoading = { isImageLoadingPlaceholderVisible = true }
             )
             Spacer(modifier = Modifier.size(64.dp))
-            Text(
-                text = streamable.streamInfo.title,
-                fontWeight = FontWeight.Bold,
-                overflow = TextOverflow.Ellipsis,
-                maxLines = 1,
-                style = MaterialTheme.typography.h6
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = streamable.streamInfo.title,
+                    fontWeight = FontWeight.Bold,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 1,
+                    style = MaterialTheme.typography.h6,
+                    modifier = Modifier.weight(1f)
+                )
+                FavoriteButtonWithFlyingHearts(streamable = streamable, viewModel = viewModel)
+            }
             Text(
                 text = streamable.streamInfo.subtitle,
                 fontWeight = FontWeight.SemiBold,
@@ -250,4 +264,118 @@ private fun ProgressSliderWithTimeText(
             )
         }
     }
+}
+@Composable
+fun FavoriteButtonWithFlyingHearts(
+    streamable: Streamable,
+    viewModel: FavoriteSongsViewModel
+) {
+    val song = remember(streamable) {
+        Song(
+            id = streamable.streamInfo.title,
+            title = streamable.streamInfo.title,
+            artist = streamable.streamInfo.subtitle,
+            album = "",
+            duration = 0L,
+            streamUrl = streamable.streamInfo.streamUrl,
+            imageUrl = streamable.streamInfo.imageUrl
+        )
+    }
+    val isFavorite by viewModel.isFavoriteFlow(song.id).collectAsState(initial = false)
+    val scale = remember { Animatable(1f) }
+    val scope = rememberCoroutineScope()
+
+    var flyingHearts by remember { mutableStateOf(listOf<Int>()) }
+    var heartDirections by remember { mutableStateOf(mapOf<Int, Float>()) }
+
+    Box(modifier = Modifier.size(80.dp)) {
+        IconButton(
+            onClick = {
+                viewModel.toggleFavorite(song)
+
+                scope.launch {
+                    scale.animateTo(
+                        1.3f,
+                        animationSpec = tween(durationMillis = 100)
+                    )
+                    scale.animateTo(
+                        1f,
+                        animationSpec = tween(durationMillis = 100)
+                    )
+                }
+
+                val newHearts = (0 until 6).map { flyingHearts.size + it }
+                flyingHearts = flyingHearts + newHearts
+
+                heartDirections = heartDirections + newHearts.associateWith { (-30..30).random().toFloat() }
+
+                scope.launch {
+                    delay(1000)
+                    flyingHearts = flyingHearts.drop(6)
+                }
+            }
+        ) {
+            Icon(
+                imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                contentDescription = "Favorite",
+                tint = if (isFavorite) Color.Red else Color.White,
+                modifier = Modifier
+                    .size(30.dp)
+                    .scale(scale.value)
+            )
+        }
+
+        flyingHearts.forEach { heartId ->
+            FlyingHeart(
+                modifier = Modifier.align(Alignment.Center),
+                angleX = heartDirections[heartId] ?: 0f,
+                durationMillis = 1000
+            )
+        }
+    }
+}
+
+
+@Composable
+fun FlyingHeart(
+    modifier: Modifier = Modifier,
+    angleX: Float = 0f,
+    durationMillis: Int = 1000
+) {
+    val offsetY = remember { Animatable(0f) }
+    val offsetX = remember { Animatable(0f) }
+    val alpha = remember { Animatable(1f) }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        scope.launch {
+            offsetY.animateTo(
+                targetValue = -150f,
+                animationSpec = tween(durationMillis)
+            )
+        }
+        scope.launch {
+            offsetX.animateTo(
+                targetValue = angleX,
+                animationSpec = tween(durationMillis)
+            )
+        }
+        scope.launch {
+            alpha.animateTo(
+                targetValue = 0f,
+                animationSpec = tween(durationMillis)
+            )
+        }
+    }
+
+    Icon(
+        imageVector = Icons.Filled.Favorite,
+        contentDescription = null,
+        tint = Color.Red.copy(alpha = alpha.value),
+        modifier = modifier
+            .offset {
+                IntOffset(offsetX.value.roundToInt(), offsetY.value.roundToInt())
+            }
+            .size(20.dp)
+    )
 }

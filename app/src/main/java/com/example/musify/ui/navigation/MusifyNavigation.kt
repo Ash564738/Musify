@@ -22,10 +22,13 @@ import com.example.musify.domain.Streamable
 import com.example.musify.ui.dynamicTheme.dynamicbackgroundmodifier.DynamicBackgroundResource
 import com.example.musify.ui.dynamicTheme.dynamicbackgroundmodifier.dynamicBackground
 import com.example.musify.ui.screens.GetPremiumScreen
+import com.example.musify.ui.screens.favoritescreen.FavoriteScreen
 import com.example.musify.ui.screens.homescreen.HomeScreen
 import com.example.musify.ui.screens.searchscreen.PagingItemsForSearchScreen
 import com.example.musify.ui.screens.searchscreen.SearchScreen
 import com.example.musify.viewmodels.AuthViewModel
+import com.example.musify.viewmodels.FavoriteSongsViewModel
+import com.example.musify.viewmodels.PlaybackViewModel
 import com.example.musify.viewmodels.homefeedviewmodel.HomeFeedViewModel
 import com.example.musify.viewmodels.searchviewmodel.SearchFilter
 import com.example.musify.viewmodels.searchviewmodel.SearchScreenUiState
@@ -44,10 +47,10 @@ fun MusifyNavigation(
 ) {
     NavHost(
         navController = navController,
-        startDestination = MusifyBottomNavigationDestinations.Home.route
+        startDestination = "${MusifyBottomNavigationDestinations.Home.route}.graph"
     ) {
         navGraphWithDetailScreens(
-            navGraphRoute = MusifyBottomNavigationDestinations.Home.route,
+            navGraphRoute = "${MusifyBottomNavigationDestinations.Home.route}.graph",
             startDestination = MusifyNavigationDestinations.HomeScreen.route,
             navController = navController,
             playStreamable = playStreamable,
@@ -55,13 +58,14 @@ fun MusifyNavigation(
         ) { nestedController ->
             homeScreen(
                 route = MusifyNavigationDestinations.HomeScreen.route,
-                onCarouselCardClicked = {
-                    nestedController.navigateToDetailScreen(searchResult = it.associatedSearchResult)
+                onCarouselCardClicked = { cardInfo ->
+                    nestedController.navigateToDetailScreen(cardInfo.associatedSearchResult)
                 }
             )
         }
+
         navGraphWithDetailScreens(
-            navGraphRoute = MusifyBottomNavigationDestinations.Search.route,
+            navGraphRoute = "${MusifyBottomNavigationDestinations.Search.route}.graph",
             startDestination = MusifyNavigationDestinations.SearchScreen.route,
             navController = navController,
             playStreamable = playStreamable,
@@ -74,8 +78,33 @@ fun MusifyNavigation(
             )
         }
 
+        navGraphWithDetailScreens(
+            navGraphRoute = "${MusifyBottomNavigationDestinations.Playlist.route}.graph",
+            startDestination = MusifyNavigationDestinations.PlaylistScreen.route,
+            navController = navController,
+            playStreamable = playStreamable,
+            onPausePlayback = onPausePlayback
+        ) { nestedController ->
+            playlistScreen(
+                route = MusifyNavigationDestinations.PlaylistScreen.route,
+                onNavigateToPlaylistSongs = { playlist ->
+                    val route = MusifyNavigationDestinations.PlaylistDetailScreen.buildUserRoute(playlist.id)
+                    nestedController.navigateToDetailScreen(route)
+                }
+            )
+        }
+
         composable(MusifyBottomNavigationDestinations.Premium.route) {
             GetPremiumScreen()
+        }
+
+        composable(MusifyBottomNavigationDestinations.Favorite.route) {
+            val favoriteSongsViewModel: FavoriteSongsViewModel = hiltViewModel()
+            val playbackViewModel: PlaybackViewModel = hiltViewModel()
+            FavoriteScreen(
+                viewModel = favoriteSongsViewModel,
+                playbackViewModel = playbackViewModel
+            )
         }
     }
 }

@@ -21,35 +21,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.musify.R
 
-/**
- * A sealed class hierarchy that contains the different header image
- * types.
- */
 sealed class HeaderImageSource {
     data class ImageFromUrlString(val urlString: String) : HeaderImageSource()
     data class ImageFromDrawableResource(@DrawableRes val resourceId: Int) : HeaderImageSource()
 }
 
-/**
- * A composable that is used to display an image together with it's
- * [title] and [subtitle]. The image will be centered. The [title]
- * and [subtitle] will be placed after the image, in a vertical
- * manner.
- * @param title the title associated with the image.
- * @param headerImageSource the source to be used for the image.
- * @param subtitle the subtitle associated with the image.
- * @param onBackButtonClicked the lambda that will be executed when the
- * back button is pressed.
- * @param isLoadingPlaceholderVisible used to indicate whether the loading
- * placeholder for the image is visible.
- * @param onImageLoading the lambda to execute when the image is
- * loading.
- * @param onImageLoaded the lambda to execute when the image has finished
- * loading. It is also provided with a nullable [Throwable] parameter that
- * can be used to determine whether the image was loaded successfully.
- * @param additionalMetadataContent the lambda the can be used to add additional
- * items that will appear after the [subtitle].
- */
 @Composable
 fun ImageHeaderWithMetadata(
     title: String,

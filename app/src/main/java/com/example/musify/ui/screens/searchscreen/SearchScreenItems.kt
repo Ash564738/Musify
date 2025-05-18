@@ -5,6 +5,8 @@ import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -13,6 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.paging.compose.LazyPagingItems
@@ -20,6 +24,7 @@ import androidx.paging.compose.items
 import androidx.paging.compose.itemsIndexed
 import com.example.musify.domain.SearchResult
 import com.example.musify.ui.components.*
+import com.example.musify.R
 
 /**
  * A color that is meant to be applied to all types of search items.
@@ -69,7 +74,6 @@ fun LazyListScope.searchAlbumListItems(
     onImageLoading: (SearchResult) -> Unit,
     onImageLoadingFinished: (SearchResult.AlbumSearchResult, Throwable?) -> Unit
 ) {
-
     itemsIndexedWithEmptyListContent(
         items = albumListForSearchQuery,
         cardType = ListItemCardType.ALBUM,
@@ -79,12 +83,18 @@ fun LazyListScope.searchAlbumListItems(
             MusifyCompactListItemCard(
                 backgroundColor = CardBackgroundColor,
                 shape = CardShape,
-                cardType = ListItemCardType.ALBUM,
                 thumbnailImageUrlString = it.albumArtUrlString,
                 title = it.name,
                 subtitle = it.artistsString,
                 onClick = { onItemClick(it) },
-                onTrailingButtonIconClick = { onItemClick(it) },
+                trailingContent = {
+                    IconButton(onClick = { onItemClick(it) }) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(id = R.drawable.ic_baseline_chevron_right_24),
+                            contentDescription = "Navigate to album"
+                        )
+                    }
+                },
                 isLoadingPlaceHolderVisible = isLoadingPlaceholderVisible(it),
                 onThumbnailImageLoadingFinished = { throwable ->
                     onImageLoadingFinished(it, throwable)
@@ -114,12 +124,18 @@ fun LazyListScope.searchArtistListItems(
             MusifyCompactListItemCard(
                 backgroundColor = CardBackgroundColor,
                 shape = CardShape,
-                cardType = ListItemCardType.ARTIST,
                 thumbnailImageUrlString = it.imageUrlString ?: "",
                 title = it.name,
                 subtitle = "Artist",
                 onClick = { onItemClick(it) },
-                onTrailingButtonIconClick = { onItemClick(it) },
+                trailingContent = {
+                    IconButton(onClick = { onItemClick(it) }) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(id = R.drawable.ic_baseline_chevron_right_24),
+                            contentDescription = "Navigate to artist"
+                        )
+                    }
+                },
                 isLoadingPlaceHolderVisible = isLoadingPlaceholderVisible(it),
                 onThumbnailImageLoadingFinished = { throwable ->
                     onImageLoadingFinished(it, throwable)
@@ -150,12 +166,18 @@ fun LazyListScope.searchPlaylistListItems(
             MusifyCompactListItemCard(
                 backgroundColor = CardBackgroundColor,
                 shape = CardShape,
-                cardType = ListItemCardType.PLAYLIST,
                 thumbnailImageUrlString = it.imageUrlString ?: "",
                 title = it.name,
                 subtitle = "Playlist",
                 onClick = { onItemClick(it) },
-                onTrailingButtonIconClick = { onItemClick(it) },
+                trailingContent = {
+                    IconButton(onClick = { onItemClick(it) }) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(id = R.drawable.ic_baseline_chevron_right_24),
+                            contentDescription = "Navigate to playlist"
+                        )
+                    }
+                },
                 isLoadingPlaceHolderVisible = isLoadingPlaceholderVisible(it),
                 onThumbnailImageLoadingFinished = { throwable ->
                     onImageLoadingFinished(it, throwable)

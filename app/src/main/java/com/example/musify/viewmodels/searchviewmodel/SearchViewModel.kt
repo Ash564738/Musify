@@ -22,10 +22,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import javax.inject.Inject
 
-/**
- * An enum class that contains the different ui states associated with
- * the [SearchViewModel].
- */
 enum class SearchScreenUiState { LOADING, IDLE }
 
 @HiltViewModel
@@ -150,28 +146,6 @@ class SearchViewModel @Inject constructor(
         _episodeListForSearchQuery.value = PagingData.empty()
     }
 
-    /**
-     * Used to collect a flow and set the the [_uiState] to
-     * [SearchScreenUiState.SUCCESS] based on the [updateUiStatePredicate]
-     * after running the [collectBlock]. The [_uiState] will be set to
-     * [SearchScreenUiState.SUCCESS] if, and only if, [updateUiStatePredicate]
-     * is true and the current value of [_uiState] is equal to
-     * [SearchScreenUiState.LOADING].
-     *
-     * This method is mainly used to update the [_uiState] to
-     * [SearchScreenUiState.SUCCESS] based on the [currentlySelectedFilter].
-     * This prevents the [_uiState] to be assigned to [SearchScreenUiState.LOADING]
-     * for as long as all the flows get collected. Instead, the ui state will be
-     * updated to [SearchScreenUiState.SUCCESS] as soon as the flow
-     * for the [currentlySelectedFilter] is collected.
-     *
-     * For eg: If the user has selected the current filter to be [SearchFilter.ALBUMS],
-     * this [_uiState] will be set to [SearchScreenUiState.SUCCESS] immediately
-     * after the search results for the album has been set. This precludes the
-     * need for waiting for other flows, such as artists/tracks to be collected
-     * before setting the [_uiState] to [SearchScreenUiState.SUCCESS]
-     * for the search results since the user just wants to see the album list.
-     */
     private fun <T> Flow<T>.collectInViewModelScopeUpdatingUiState(
         updateUiStatePredicate: Boolean,
         collectBlock: (T) -> Unit
@@ -196,12 +170,6 @@ class SearchViewModel @Inject constructor(
         }
         _uiState.value = SearchScreenUiState.LOADING
         searchJob = viewModelScope.launch {
-            // add artificial delay to limit the number of calls to
-            // the api when the user is typing the search query.
-            // adding this delay allows for a short window of time
-            // which could be used to cancel this coroutine if the
-            // search text is currently being typed; preventing
-            // un-necessary calls to the api
             delay(500)
             collectAndAssignSearchResults(searchQuery)
         }

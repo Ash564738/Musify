@@ -3,7 +3,10 @@ package com.example.musify.data.repositories.tracksrepository
 import android.content.Context
 import android.net.ConnectivityManager
 import android.util.Log
+import androidx.paging.Pager
 import androidx.paging.PagingData
+import com.example.musify.data.paging.JamendoPlaylistTracksPagingSource
+import com.example.musify.data.paging.JamendoTrackIdsPagingSource
 import com.example.musify.data.utils.FetchedResource
 import com.example.musify.domain.MusifyErrorType
 import com.example.musify.domain.SearchResult
@@ -167,13 +170,25 @@ class MusifyTracksRepository @Inject constructor(
         }
     }
 
+    override fun getPaginatedStreamForTrackIds(songIds: List<String>): Flow<PagingData<SearchResult.TrackSearchResult>> {
+        Log.d(TAG, "Starting getPaginatedStreamForTrackIds() for songIds: $songIds")
+        return try {
+            Pager(pagingConfig) {
+                JamendoTrackIdsPagingSource(songIds, jamendoService, clientId)
+            }.flow
+        } catch (e: Exception) {
+            Log.e(TAG, "Unexpected error in getPaginatedStreamForTrackIds: ${e.message}", e)
+            throw e
+        }
+    }
+
     override fun getPaginatedStreamForPlaylistTracks(
         playlistId: String
     ): Flow<PagingData<SearchResult.TrackSearchResult>> {
         Log.d(TAG, "Starting getPaginatedStreamForPlaylistTracks() for playlistId: $playlistId")
         return try {
-            androidx.paging.Pager(pagingConfig) {
-                com.example.musify.data.paging.JamendoPlaylistTracksPagingSource(
+            Pager(pagingConfig) {
+                JamendoPlaylistTracksPagingSource(
                     playlistId = playlistId,
                     jamendoService = jamendoService,
                     clientId = clientId

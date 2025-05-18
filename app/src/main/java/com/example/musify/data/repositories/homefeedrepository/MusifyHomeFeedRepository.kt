@@ -40,8 +40,8 @@ class MusifyHomeFeedRepository @Inject constructor(
             }
             val response = jamendoService.getNewAlbums(offset = 0, limit = 20)
             Log.d(TAG, "Response received: isSuccessful=${response.isSuccessful}, code=${response.code()}")
-            Log.d(TAG, "Response headers: ${response.headers()}")
-            Log.d(TAG, "Response body: ${response.body()?.toString() ?: "null"}")
+//            Log.d(TAG, "Response headers: ${response.headers()}")
+//            Log.d(TAG, "Response body: ${response.body()?.toString() ?: "null"}")
 
             if (response.isSuccessful && response.body()?.headers?.code == 0) {
                 val albums = response.body()?.results?.mapNotNull { album ->
@@ -94,8 +94,8 @@ class MusifyHomeFeedRepository @Inject constructor(
             }
             val response = jamendoService.getAlbumsByTag(tags = genre.toString(), offset = 0, limit = 20)
             Log.d(TAG, "Response received: isSuccessful=${response.isSuccessful}, code=${response.code()}")
-            Log.d(TAG, "Response headers: ${response.headers()}")
-            Log.d(TAG, "Response body: ${response.body()?.toString() ?: "null"}")
+//            Log.d(TAG, "Response headers: ${response.headers()}")
+//            Log.d(TAG, "Response body: ${response.body()?.toString() ?: "null"}")
             if (response.isSuccessful && response.body()?.headers?.code == 0) {
                 val albums = response.body()!!.results.mapNotNull { album ->
                     try {
@@ -142,8 +142,8 @@ class MusifyHomeFeedRepository @Inject constructor(
                 tags = genre.toString(), offset = 0, limit = 20
             )
             Log.d(TAG, "Response received: isSuccessful=${response.isSuccessful}, code=${response.code()}")
-            Log.d(TAG, "Response headers: ${response.headers()}")
-            Log.d(TAG, "Response body: ${response.body()?.toString() ?: "null"}")
+//            Log.d(TAG, "Response headers: ${response.headers()}")
+//            Log.d(TAG, "Response body: ${response.body()?.toString() ?: "null"}")
 
             if (response.isSuccessful && response.body()?.headers?.code == 0) {
                 val playlists = response.body()!!.results.mapNotNull { playlist ->

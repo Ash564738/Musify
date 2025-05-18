@@ -18,38 +18,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.example.musify.ui.navigation.MusifyBottomNavigationDestinations
 
-/**
- * An object that contains constants related to the [MusifyBottomNavigation]
- * composable.
- */
 object MusifyBottomNavigationConstants {
     val navigationHeight = 60.dp
 }
 
-/**
- * A bottom navigation bar composable with a background gradient.
- * Note: The bottom navigation bar has a fixed height of 80dp.
- *
- * @param navigationItems the [MusifyBottomNavigationDestinations] to
- * display in the navigation bar.
- * @param currentlySelectedItem the currently selected [MusifyBottomNavigationDestinations].
- * The currently selected item will be highlighted and will also use the
- * [MusifyBottomNavigationDestinations.filledIconVariantResourceId] for the image resource.
- * @param onItemClick the lambda to execute when an item is clicked. A reference to
- * an instance of [MusifyBottomNavigationDestinations] that was clicked will be provided
- * as a parameter to the lambda.
- * @param modifier the modifier to be applied to the navigation bar. The height of the
- * composable is fixed at 80dp.
- * @see [com.example.musify.ui.navigation.MusifyBottomNavigationConnectedWithBackStack]
- */
 @Composable
 fun MusifyBottomNavigation(
     navigationItems: List<MusifyBottomNavigationDestinations>,
     currentlySelectedItem: MusifyBottomNavigationDestinations,
     onItemClick: (MusifyBottomNavigationDestinations) -> Unit,
     modifier: Modifier = Modifier,
+    navController: NavController,
+    currentRoute: String
 ) {
     val gradientBrush = remember {
         Brush.verticalGradient(
@@ -66,9 +49,6 @@ fun MusifyBottomNavigation(
         )
     }
 
-    // use surface because the default height of bottom navigation
-    // according to the material spec is lower than the height
-    // used by spotify for it's navigation bar
     Surface(
         modifier = Modifier
             .background(gradientBrush)
@@ -83,20 +63,20 @@ fun MusifyBottomNavigation(
                 .selectableGroup(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            navigationItems.forEach {
+            navigationItems.forEach { item ->
                 BottomNavigationItem(
-                    selected = it == currentlySelectedItem,
-                    onClick = { onItemClick(it) },
+                    selected = item.route == currentRoute,
+                    onClick = { onItemClick(item) },
                     icon = {
                         Icon(
                             imageVector = ImageVector.vectorResource(
-                                if (it == currentlySelectedItem) it.filledIconVariantResourceId
-                                else it.outlinedIconVariantResourceId
+                                if (item.route == currentRoute) item.filledIconVariantResourceId
+                                else item.outlinedIconVariantResourceId
                             ),
                             contentDescription = null
                         )
                     },
-                    label = { Text(text = it.label) }
+                    label = { Text(text = item.label) }
                 )
             }
         }

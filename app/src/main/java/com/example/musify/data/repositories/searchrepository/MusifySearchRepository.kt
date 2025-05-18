@@ -26,15 +26,15 @@ class MusifySearchRepository @Inject constructor(
         searchQuery: String,
         countryCode: String
     ): FetchedResource<SearchResults, MusifyErrorType> {
-        Log.d("MusifySearchRepository", "fetchSearchResultsForQuery called with searchQuery=$searchQuery, countryCode=$countryCode")
+        Log.d("MusifySearchRepository", "fetchSearchResultsForQuery: Start | searchQuery=$searchQuery, countryCode=$countryCode")
         return try {
             tokenRepository.runCatchingWithToken {
                 spotifyService.search(searchQuery, countryCode, it).toSearchResults()
             }.also {
-                Log.d("MusifySearchRepository", "Successfully fetched search results for query=$searchQuery")
+                Log.d("MusifySearchRepository", "fetchSearchResultsForQuery: Success | searchQuery=$searchQuery")
             }
         } catch (e: Exception) {
-            Log.e("MusifySearchRepository", "Error fetching search results for query=$searchQuery: ${e.message}", e)
+            Log.e("MusifySearchRepository", "fetchSearchResultsForQuery: Error | searchQuery=$searchQuery, error=${e.message}", e)
             FetchedResource.Failure(cause = MusifyErrorType.NETWORK_ERROR, data = null)
         }
     }
@@ -43,16 +43,21 @@ class MusifySearchRepository @Inject constructor(
         searchQuery: String,
         countryCode: String
     ): Flow<PagingData<SearchResult.AlbumSearchResult>> {
-        Log.d("MusifySearchRepository", "getPaginatedSearchStreamForAlbums called with searchQuery=$searchQuery, countryCode=$countryCode")
-        return Pager(pagingConfig) {
-            SpotifyAlbumSearchPagingSource(
-                searchQuery = searchQuery,
-                countryCode = countryCode,
-                tokenRepository = tokenRepository,
-                spotifyService = spotifyService
-            )
-        }.flow.also {
-            Log.d("MusifySearchRepository", "Created paginated stream for albums with query=$searchQuery")
+        Log.d("MusifySearchRepository", "getPaginatedSearchStreamForAlbums: Start | searchQuery=$searchQuery, countryCode=$countryCode")
+        return try {
+            Pager(pagingConfig) {
+                SpotifyAlbumSearchPagingSource(
+                    searchQuery = searchQuery,
+                    countryCode = countryCode,
+                    tokenRepository = tokenRepository,
+                    spotifyService = spotifyService
+                )
+            }.flow.also {
+                Log.d("MusifySearchRepository", "getPaginatedSearchStreamForAlbums: Success | searchQuery=$searchQuery")
+            }
+        } catch (e: Exception) {
+            Log.e("MusifySearchRepository", "getPaginatedSearchStreamForAlbums: Error | searchQuery=$searchQuery, error=${e.message}", e)
+            throw e
         }
     }
 
@@ -60,16 +65,21 @@ class MusifySearchRepository @Inject constructor(
         searchQuery: String,
         countryCode: String
     ): Flow<PagingData<SearchResult.ArtistSearchResult>> {
-        Log.d("MusifySearchRepository", "getPaginatedSearchStreamForArtists called with searchQuery=$searchQuery, countryCode=$countryCode")
-        return Pager(pagingConfig) {
-            SpotifyArtistSearchPagingSource(
-                searchQuery = searchQuery,
-                countryCode = countryCode,
-                tokenRepository = tokenRepository,
-                spotifyService = spotifyService
-            )
-        }.flow.also {
-            Log.d("MusifySearchRepository", "Created paginated stream for artists with query=$searchQuery")
+        Log.d("MusifySearchRepository", "getPaginatedSearchStreamForArtists: Start | searchQuery=$searchQuery, countryCode=$countryCode")
+        return try {
+            Pager(pagingConfig) {
+                SpotifyArtistSearchPagingSource(
+                    searchQuery = searchQuery,
+                    countryCode = countryCode,
+                    tokenRepository = tokenRepository,
+                    spotifyService = spotifyService
+                )
+            }.flow.also {
+                Log.d("MusifySearchRepository", "getPaginatedSearchStreamForArtists: Success | searchQuery=$searchQuery")
+            }
+        } catch (e: Exception) {
+            Log.e("MusifySearchRepository", "getPaginatedSearchStreamForArtists: Error | searchQuery=$searchQuery, error=${e.message}", e)
+            throw e
         }
     }
 
@@ -77,16 +87,21 @@ class MusifySearchRepository @Inject constructor(
         searchQuery: String,
         countryCode: String
     ): Flow<PagingData<SearchResult.TrackSearchResult>> {
-        Log.d("MusifySearchRepository", "getPaginatedSearchStreamForTracks called with searchQuery=$searchQuery, countryCode=$countryCode")
-        return Pager(pagingConfig) {
-            SpotifyTrackSearchPagingSource(
-                searchQuery = searchQuery,
-                countryCode = countryCode,
-                tokenRepository = tokenRepository,
-                spotifyService = spotifyService
-            )
-        }.flow.also {
-            Log.d("MusifySearchRepository", "Created paginated stream for tracks with query=$searchQuery")
+        Log.d("MusifySearchRepository", "getPaginatedSearchStreamForTracks: Start | searchQuery=$searchQuery, countryCode=$countryCode")
+        return try {
+            Pager(pagingConfig) {
+                SpotifyTrackSearchPagingSource(
+                    searchQuery = searchQuery,
+                    countryCode = countryCode,
+                    tokenRepository = tokenRepository,
+                    spotifyService = spotifyService
+                )
+            }.flow.also {
+                Log.d("MusifySearchRepository", "getPaginatedSearchStreamForTracks: Success | searchQuery=$searchQuery")
+            }
+        } catch (e: Exception) {
+            Log.e("MusifySearchRepository", "getPaginatedSearchStreamForTracks: Error | searchQuery=$searchQuery, error=${e.message}", e)
+            throw e
         }
     }
 
@@ -94,16 +109,21 @@ class MusifySearchRepository @Inject constructor(
         searchQuery: String,
         countryCode: String
     ): Flow<PagingData<SearchResult.PlaylistSearchResult>> {
-        Log.d("MusifySearchRepository", "getPaginatedSearchStreamForPlaylists called with searchQuery=$searchQuery, countryCode=$countryCode")
-        return Pager(pagingConfig) {
-            SpotifyPlaylistSearchPagingSource(
-                searchQuery = searchQuery,
-                countryCode = countryCode,
-                tokenRepository = tokenRepository,
-                spotifyService = spotifyService
-            )
-        }.flow.also {
-            Log.d("MusifySearchRepository", "Created paginated stream for playlists with query=$searchQuery")
+        Log.d("MusifySearchRepository", "getPaginatedSearchStreamForPlaylists: Start | searchQuery=$searchQuery, countryCode=$countryCode")
+        return try {
+            Pager(pagingConfig) {
+                SpotifyPlaylistSearchPagingSource(
+                    searchQuery = searchQuery,
+                    countryCode = countryCode,
+                    tokenRepository = tokenRepository,
+                    spotifyService = spotifyService
+                )
+            }.flow.also {
+                Log.d("MusifySearchRepository", "getPaginatedSearchStreamForPlaylists: Success | searchQuery=$searchQuery")
+            }
+        } catch (e: Exception) {
+            Log.e("MusifySearchRepository", "getPaginatedSearchStreamForPlaylists: Error | searchQuery=$searchQuery, error=${e.message}", e)
+            throw e
         }
     }
 
@@ -111,16 +131,21 @@ class MusifySearchRepository @Inject constructor(
         searchQuery: String,
         countryCode: String
     ): Flow<PagingData<SearchResult.PodcastSearchResult>> {
-        Log.d("MusifySearchRepository", "getPaginatedSearchStreamForPodcasts called with searchQuery=$searchQuery, countryCode=$countryCode")
-        return Pager(pagingConfig) {
-            SpotifyPodcastSearchPagingSource(
-                searchQuery = searchQuery,
-                countryCode = countryCode,
-                tokenRepository = tokenRepository,
-                spotifyService = spotifyService
-            )
-        }.flow.also {
-            Log.d("MusifySearchRepository", "Created paginated stream for podcasts with query=$searchQuery")
+        Log.d("MusifySearchRepository", "getPaginatedSearchStreamForPodcasts: Start | searchQuery=$searchQuery, countryCode=$countryCode")
+        return try {
+            Pager(pagingConfig) {
+                SpotifyPodcastSearchPagingSource(
+                    searchQuery = searchQuery,
+                    countryCode = countryCode,
+                    tokenRepository = tokenRepository,
+                    spotifyService = spotifyService
+                )
+            }.flow.also {
+                Log.d("MusifySearchRepository", "getPaginatedSearchStreamForPodcasts: Success | searchQuery=$searchQuery")
+            }
+        } catch (e: Exception) {
+            Log.e("MusifySearchRepository", "getPaginatedSearchStreamForPodcasts: Error | searchQuery=$searchQuery, error=${e.message}", e)
+            throw e
         }
     }
 
@@ -128,16 +153,21 @@ class MusifySearchRepository @Inject constructor(
         searchQuery: String,
         countryCode: String
     ): Flow<PagingData<SearchResult.EpisodeSearchResult>> {
-        Log.d("MusifySearchRepository", "getPaginatedSearchStreamForEpisodes called with searchQuery=$searchQuery, countryCode=$countryCode")
-        return Pager(pagingConfig) {
-            SpotifyEpisodeSearchPagingSource(
-                searchQuery = searchQuery,
-                countryCode = countryCode,
-                tokenRepository = tokenRepository,
-                spotifyService = spotifyService
-            )
-        }.flow.also {
-            Log.d("MusifySearchRepository", "Created paginated stream for episodes with query=$searchQuery")
+        Log.d("MusifySearchRepository", "getPaginatedSearchStreamForEpisodes: Start | searchQuery=$searchQuery, countryCode=$countryCode")
+        return try {
+            Pager(pagingConfig) {
+                SpotifyEpisodeSearchPagingSource(
+                    searchQuery = searchQuery,
+                    countryCode = countryCode,
+                    tokenRepository = tokenRepository,
+                    spotifyService = spotifyService
+                )
+            }.flow.also {
+                Log.d("MusifySearchRepository", "getPaginatedSearchStreamForEpisodes: Success | searchQuery=$searchQuery")
+            }
+        } catch (e: Exception) {
+            Log.e("MusifySearchRepository", "getPaginatedSearchStreamForEpisodes: Error | searchQuery=$searchQuery, error=${e.message}", e)
+            throw e
         }
     }
 }

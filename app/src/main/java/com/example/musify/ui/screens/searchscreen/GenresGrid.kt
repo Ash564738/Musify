@@ -17,14 +17,6 @@ import com.example.musify.ui.components.GenreCard
 import com.example.musify.ui.components.MusifyBottomNavigationConstants
 import com.example.musify.ui.components.MusifyMiniPlayerConstants
 
-/**
- * A [LazyVerticalGrid] that displays the [availableGenres].
- * @param availableGenres the genres that are to be displayed.
- * @param onGenreItemClick the lambda to execute when a [Genre] item
- * is clicked. This lambda also provides an instance of [Genre] that
- * indicates the item that was clicked.
- * @param modifier the modifier to be applied to the grid.
- */
 @ExperimentalMaterialApi
 @Composable
 fun GenresGrid(

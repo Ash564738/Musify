@@ -159,7 +159,17 @@ interface JamendoService {
             isHighDpiDisplay() -> 600
             else -> 300
         }
-        ): Response<JamendoArtistTracksResponse>
+    ): Response<JamendoArtistTracksResponse>
+
+    @GET("tracks")
+    suspend fun getTrackById(
+        @Query("client_id") clientId: String = JAMENDO_CLIENT_ID,
+        @Query("id") trackId: Int,
+        @Query("offset") offset: Int = 0,
+        @Query("limit") limit: Int = 200,
+        @Query("audioformat") audioFormat: String = "mp32",
+        @Query("imagesize") imageSize: Int = if (isHighDpiDisplay()) 600 else 300
+    ): Response<JamendoTracksResponse>
 }
 @JsonClass(generateAdapter = true)
 data class JamendoHeaders(
@@ -202,6 +212,13 @@ data class JamendoTrack(
         shortUrl = shortUrl ?: ""
     )
 }
+
+@JsonClass(generateAdapter = true)
+data class JamendoTracksResponse(
+    @Json(name = "results") val results: List<JamendoTrack>,
+    @Json(name = "headers") val headers: JamendoHeaders
+)
+
 @JsonClass(generateAdapter = true)
 data class JamendoArtistTracksResponse(
     @Json(name = "results") val results: List<JamendoTrack>,
